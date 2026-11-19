@@ -1,0 +1,2746 @@
+/* ------------------------------------------------------------------
+   RAVEVA - Tailwind-Eingabedatei
+
+   Gebaut wird nach theme/raveva/assets/css/main.css.
+
+   Wichtig: NICHT nach style.css bauen. Publii setzt style.css beim
+   Rendern selbst zusammen aus
+       theme-variables + main.css + gdpr-popup + override + custom-css
+   und ueberschreibt dabei alles, was dort steht. main.css ist die
+   Quelldatei des Themes und Pflicht - fehlt sie, bricht der Renderer
+   mit ENOENT ab.
+
+   Die Templates verlinken weiterhin {{ css "style.css" }} - also die
+   von Publii erzeugte Datei. Das ist richtig so.
+
+   Zum Aufbau: Das Design steht als eigene Klassen mit dem Praefix "rv-",
+   nicht als Utility-Klassen in den Templates. Zwei Gruende:
+     - die Templates bleiben lesbar, auch fuer jemanden ohne Tailwind
+     - alle Farben und Abstaende haengen an den Variablen ganz oben und
+       lassen sich an einer Stelle aendern
+
+   WARUM HIER KEIN @import "tailwindcss" STEHT
+   ===========================================
+   Publii jagt die CSS beim Rendern durch CleanCSS 5.3.3, sofern in den
+   Website-Einstellungen "cssCompression" aktiv ist - und das ist die
+   Voreinstellung. Diese Version versteht zwei Dinge nicht, die
+   Tailwind v4 zwangslaeufig ausgibt:
+
+     @layer theme, base, components, utilities;   und spaeter
+     @layer utilities;                            ohne Block
+     @supports (color: color-mix(...)) { ... }    verschachtelt in Regeln
+
+   CleanCSS bricht daran ab und verschluckt nicht nur das at-rule
+   selbst, sondern die direkt folgende Regel gleich mit. Genau so ist
+   einmal der gesamte Block mit den --rv-Variablen verschwunden. Da
+   jedes var(--rv-...) dann ins Leere lief, hatte die Seite kein
+   padding mehr, keine Flaechen und nicht einmal die richtige Schrift.
+
+   Das Design braucht ohnehin keine einzige Utility-Klasse und bringt
+   seinen eigenen kleinen Reset mit - der uebrigens genau dem des
+   HTML-Entwurfs entspricht. Der Tailwind-Import ist deshalb entfallen.
+   Das Standalone-CLI baut die Datei weiterhin und minifiziert sie.
+
+   "npm run check-css" prueft, dass das Ergebnis Publiis Minifizierer
+   unbeschadet uebersteht. Vor dem Ausliefern laufen lassen.
+   ------------------------------------------------------------------ */
+
+/* ==================================================================
+   Minimaler Reset
+
+   Nur das Noetigste. Browser geben dem body von Haus aus 8px Rand -
+   ohne diese Zeile waere die Seite ringsum 8px eingerueckt und 16px
+   schmaler. Der HTML-Entwurf loest das mit <body style="margin:0">.
+   ================================================================== */
+
+body { margin: 0; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+/* ==================================================================
+   Farben, Schriften, Abstaende
+   ================================================================== */
+
+.rv {
+    /*
+     * Warme Erdpalette nach der Vorlage des Kunden. Die Namen dort:
+     * Espresso Rust, Olive Sage, Heather Beige, Brushed Brass,
+     * Sand Cream.
+     *
+     * Zwei Werte weichen bewusst ab, weil die Vorlage sie nicht
+     * hergibt - nachgerechnet, nicht nach Gefuehl:
+     *
+     *  - Olive Sage #6B705C traegt auf Sand Cream nur 3.94:1. Noetig
+     *    sind 4.5, und genau in dieser Farbe steht die kleine Schrift.
+     *    Um 12 Prozent abgedunkelt sind es 4.78:1.
+     *  - Die Palette hat nur einen hellen Ton. Fuer die abwechselnden
+     *    Abschnitte ist Sand Cream um 6 Prozent vertieft.
+     *
+     * Heather Beige und Brushed Brass tragen keinen Text - sie sind
+     * Linie und Flaeche. Brass mit Espresso darauf ergibt 5.09:1 und
+     * taugt damit fuer das Zaehler-Plaettchen.
+     */
+    --rv-ink: #4B2E20;        /* Espresso Rust, Schrift und Linien */
+    --rv-paper: #E7E1D6;      /* Sand Cream, Hintergrund */
+    --rv-paper-2: #E1DBD1;    /* Sand Cream vertieft, abwechselnde Abschnitte */
+    --rv-muted: #5E6351;      /* Olive Sage abgedunkelt, Nebentexte */
+    --rv-rule: #B7A995;       /* Heather Beige, duenne Trennlinien */
+    --rv-akzent: #C5A25D;     /* Brushed Brass, sparsam als Flaeche */
+    --rv-olive: #6B705C;      /* Olive Sage unveraendert: nur grosse Schrift, 3.94:1 - dort genuegen 3:1 */
+
+    /*
+     * Stufung der kleinen Schrift. Vorher 22 verschiedene Groessen,
+     * die kleinste 9,3px - unruhig und anstrengend. Jetzt nie unter
+     * 13px, und nur wenige Stufen.
+     */
+    --rv-t-klein: 0.8125rem;  /* 13px: Beschriftungen, Knoepfe, Menue */
+    --rv-t-mittel: 0.875rem;  /* 14px: Nebentexte, Filter */
+    --rv-t-lesen: 0.9375rem;  /* 15px: Werte, Listen zum Lesen */
+
+    /*
+     * Abstandsstufung. Vorher zwanzig verschiedene margin-top-Werte
+     * ohne System. Innerhalb einer Karte und um Ueberschriften gelten
+     * jetzt diese Stufen.
+     */
+    --rv-s-1: 0.5rem;
+    --rv-s-2: 0.75rem;
+    --rv-s-3: 1rem;
+    --rv-s-4: 1.5rem;
+    --rv-s-5: 2rem;
+    --rv-s-6: 3rem;
+
+    /*
+     * Rundungen und Schatten - das "moderne" Vokabular. Vorher hatte die
+     * Seite ausser den Farbpunkten keine einzige Rundung; auf Wunsch des
+     * Kunden jetzt Pillen fuer Bedienelemente, weiche Ecken fuer Karten
+     * und Bilder, ein leiser warmer Schatten fuer Flaechen.
+     */
+    --rv-r-s: 0.5rem;
+    --rv-r-m: 1rem;
+    --rv-r-pill: 999px;
+    --rv-schatten: 0 12px 32px rgba(75, 46, 32, 0.10);
+    --rv-schatten-klein: 0 4px 14px rgba(75, 46, 32, 0.08);
+
+    /* Bewusst Systemschriften: extern eingebundene Google Fonts sind in
+       Deutschland ein DSGVO-Problem. Sollen eigene Schriften rein, dann
+       selbst hosten unter assets/fonts und hier ergaenzen. */
+    --rv-sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --rv-serif: Georgia, "Times New Roman", serif;
+
+    --rv-gutter: clamp(1.25rem, 5vw, 4rem);   /* Seitenabstand */
+
+    background: var(--rv-paper);
+    color: var(--rv-ink);
+    font-family: var(--rv-serif);
+    font-size: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+}
+
+.rv *,
+.rv *::before,
+.rv *::after { box-sizing: border-box; }
+
+.rv h1, .rv h2, .rv h3, .rv p, .rv ul, .rv figure, .rv table { margin: 0; }
+.rv ul { list-style: none; padding: 0; }
+.rv a { color: inherit; }
+
+.rv a:focus-visible,
+.rv button:focus-visible {
+    outline: 2px solid var(--rv-ink);
+    outline-offset: 3px;
+}
+
+.rv-wrap { max-width: 1400px; margin: 0 auto; }
+
+/* ==================================================================
+   Kopfzeile
+   ================================================================== */
+
+/*
+ * Die Kopfzeile bleibt beim Scrollen oben - leicht durchscheinend, damit
+ * der Inhalt darunter noch ahnbar ist. Damit Sprungmarken nicht unter
+ * ihr verschwinden, bekommen die Abschnitte scroll-margin-top.
+ */
+.rv-top {
+    align-items: center;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    background: rgba(231, 225, 214, 0.86);
+    border-bottom: 1px solid rgba(183, 169, 149, 0.5);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: space-between;
+    padding: 1rem var(--rv-gutter);
+    position: sticky;
+    top: 0;
+    z-index: 30;
+}
+
+.rv-top__mark {
+    font-family: var(--rv-sans);
+    font-weight: 700;
+    font-size: 0.95rem;
+    letter-spacing: 0.16em;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    text-decoration: none;
+    word-break: break-word;
+}
+
+/*
+ * Olive Sage auch hier, aber abgedunkelt: Das ist kleine Schrift, sie
+ * braucht 4.5:1, und das unveraenderte Olive Sage kaeme nur auf 3.94:1.
+ * Mit ".rv " davor, weil die Marke ein <a> ist - ".rv a" wuerde die
+ * Farbe sonst ueberstimmen (Abschnitt 6 der Uebergabe).
+ */
+.rv .rv-top__mark {
+    color: var(--rv-muted);
+}
+
+.rv-top__mark img { display: block; height: 1.75rem; width: auto; }
+
+.rv-nav { display: flex; gap: clamp(1rem, 3vw, 2.25rem); flex-wrap: wrap; }
+
+/*
+ * Der Menueknopf fuer schmale Bildschirme. Steht mit "hidden" im
+ * Dokument; main.js zeigt ihn nur, wenn der Bildschirm schmal ist. Ohne
+ * JavaScript bleibt das Menue einfach sichtbar - besser als ein Knopf,
+ * der nichts tut.
+ */
+.rv-nav-toggle {
+    align-items: center;
+    background: none;
+    border: 1px solid var(--rv-rule);
+    color: var(--rv-ink);
+    cursor: pointer;
+    display: inline-flex;
+    font-family: var(--rv-sans);
+    font-size: var(--rv-t-klein);
+    gap: 0.6rem;
+    letter-spacing: 0.1em;
+    min-height: 2.75rem;
+    padding: 0 1rem;
+    text-transform: uppercase;
+}
+
+.rv-nav-toggle[hidden] { display: none; }
+
+.rv-nav-toggle:hover,
+.rv-nav-toggle[aria-expanded="true"] { border-color: var(--rv-ink); }
+
+/* drei Striche, aus Rahmen gezeichnet - kein Bild noetig */
+.rv-nav-toggle__icon {
+    border-bottom: 2px solid currentColor;
+    border-top: 2px solid currentColor;
+    height: 0.7rem;
+    position: relative;
+    width: 1.1rem;
+}
+
+.rv-nav-toggle__icon::after {
+    border-top: 2px solid currentColor;
+    content: "";
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: calc(50% - 1px);
+}
+
+.rv-nav-toggle[aria-expanded="true"] .rv-nav-toggle__icon {
+    border-color: transparent;
+}
+
+.rv-nav-toggle[aria-expanded="true"] .rv-nav-toggle__icon::after {
+    transform: rotate(45deg);
+}
+
+.rv-nav a {
+    font-family: var(--rv-sans);
+    font-size: var(--rv-t-klein);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-decoration: none;
+    padding-bottom: 3px;
+    border-bottom: 1px solid transparent;
+}
+
+.rv-nav a:hover { border-bottom-color: var(--rv-ink); }
+
+/*
+ * Menues aus Publiis Menueverwaltung kommen als verschachtelte <ul>.
+ * Sie sollen sich genauso in eine Zeile legen wie die Links des
+ * Rueckfalls, damit beide Wege gleich aussehen.
+ */
+.rv-menu {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: clamp(1rem, 3vw, 2.25rem);
+}
+
+.rv-foot .rv-menu { gap: 1.5rem; }
+
+/* ==================================================================
+   Hero mit dem Schriftzug
+   ================================================================== */
+
+.rv-hero { padding: clamp(2.5rem, 8vw, 6rem) var(--rv-gutter) clamp(2rem, 5vw, 4rem); }
+
+.rv-eyebrow {
+    font-family: var(--rv-sans);
+    font-size: var(--rv-t-klein);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--rv-muted);
+}
+
+/*
+ * Der Schriftzug verteilt seine Buchstaben ueber die volle Breite.
+ * Die einzelnen <span> setzt main.js, damit der Name in den
+ * Theme-Einstellungen aenderbar bleibt. Ohne JavaScript steht der Name
+ * einfach normal da - lesbar bleibt er immer.
+ */
+/*
+ * Der Schriftzug in Olive Sage, wie vom Kunden gewuenscht. Unveraendert
+ * #6B705C traegt auf Sand Cream 3.94:1 - fuer grosse Schrift verlangt
+ * Die Farbe und Schrift bleiben beim Einpassen unveraendert.
+ *
+ * --rv-zeichen liefert die Ausgangsgroesse ohne JavaScript. main.js
+ * misst die tatsaechlichen Zeilen und passt sie an die Containerbreite
+ * an: ein Wort in einer Zeile, mehrere Woerter in zwei Zeilen.
+ *
+ * Ohne JavaScript bleibt der normale, umbrechende Text als Rueckfall.
+ */
+.rv .rv-wordmark {
+    --rv-wordmark-max: 15rem;
+    color: var(--rv-olive);
+    font-family: var(--rv-sans);
+    font-size: clamp(2.2rem, calc(108vw / var(--rv-zeichen, 6)), 15rem);
+    font-weight: 700;
+    letter-spacing: 0;
+    line-height: 0.9;
+    margin-top: 0.3em;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.rv .rv-wordmark--fit { overflow-wrap: normal; word-break: normal; }
+
+.rv-wordmark__line {
+    display: block;
+    white-space: nowrap;
+}
+
+.rv-wordmark--split .rv-wordmark__line { display: flex; justify-content: space-between; }
+
+.rv-wordmark__letter {
+    display: inline-block;
+    flex: none;
+    animation: rv-rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+}
+
+@keyframes rv-rise {
+    from { opacity: 0; transform: translateY(0.3em); }
+    to   { opacity: 1; transform: none; }
+}
+
+.rv-hero__rule {
+    height: 1px;
+    background: var(--rv-ink);
+    margin: clamp(1.5rem, 3vw, 2.5rem) 0;
+}
+
+.rv-hero__foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+.rv-lead {
+    font-size: clamp(1.05rem, 1rem + 0.5vw, 1.45rem);
+    max-width: 36ch;
+}
+
+.rv-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+
+/* ==================================================================
+   Schaltflaechen
+   ================================================================== */
+
+/*
+ * Achtung Spezifitaet: weiter oben steht ".rv a { color: inherit }".
+ * Das ist eine Klasse plus ein Elementname (0,1,1) und schlaegt damit
+ * ein einfaches ".rv-btn" (0,1,0) - die Schrift im Button waere schwarz
+ * auf schwarzem Grund und damit unlesbar.
+ * Deshalb hier durchgehend ".rv .rv-btn" (0,2,0).
+ */
+.rv .rv-btn {
+    display: inline-block;
+    font-family: var(--rv-sans);
+    font-size: var(--rv-t-klein);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-decoration: none;
+    padding: 1rem 1.6rem;
+    border: 1px solid var(--rv-ink);
+    border-radius: var(--rv-r-pill);
+    background: var(--rv-ink);
+    color: var(--rv-paper);
+    transition: background 0.2s, color 0.2s;
+}
+
+.rv .rv-btn:hover { background: var(--rv-paper); color: var(--rv-ink); }
+
+.rv .rv-btn--ghost { background: transparent; color: var(--rv-ink); }
+.rv .rv-btn--ghost:hover { background: var(--rv-ink); color: var(--rv-paper); }
+
+/* ==================================================================
+   Abschnitte
+   ================================================================== */
+
+.rv-section {
+    padding: clamp(3rem, 7vw, 6rem) var(--rv-gutter);
+    border-top: 1px solid rgba(183, 169, 149, 0.4);
+    scroll-margin-top: 4.5rem;
+}
+
+.rv-section--tint { background: var(--rv-paper-2); }
+
+.rv-head { display: flex; align-items: center; gap: 1.25rem; }
+
+.rv-head__label {
+    font-family: var(--rv-sans);
+    font-size: var(--rv-t-klein);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--rv-muted);
+    white-space: nowrap;
+}
+
+.rv-head__line { flex: 1; height: 1px; background: var(--rv-rule); }
+
+.rv .rv-h2 {
+    font-family: var(--rv-sans);
+    font-weight: 700;
+    font-size: clamp(1.7rem, 1rem + 2.6vw, 3.25rem);
+    line-height: 1.05;
+    letter-spacing: -0.015em;
+    margin-top: var(--rv-s-3);
+    margin-bottom: clamp(1.75rem, 4vw, 3rem);
+    /* Kein white-space: pre-line - Publii minifiziert das erzeugte HTML
+       und macht aus Zeilenumbruechen im Text ohnehin Leerzeichen.
+       Die Ueberschrift bricht stattdessen nach Spaltenbreite um. */
+}
+
+.rv-parfums-intro {
+    padding-top: clamp(2.5rem, 5vw, 4.5rem);
+    padding-bottom: clamp(2.5rem, 5vw, 4.5rem);
+}
+
+.rv .rv-parfums-title {
+    color: var(--rv-olive);
+    font-size: clamp(2.2rem, calc(108vw / var(--rv-zeichen, 6)), 15rem);
+    font-weight: 700;
+    letter-spacing: 0;
+    line-height: 0.95;
+    margin: 0;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.rv-parfums-intro .rv-prose { margin-top: 2rem; }
+
+.rv-parfums-intro + .rv-section { padding-top: clamp(2rem, 4vw, 3.5rem); }
+
+.rv-note {
+    color: var(--rv-muted);
+    max-width: 52ch;
+    margin-top: -1.5rem;
+    margin-bottom: clamp(2rem, 4vw, 3rem);
+}
+
+/* ==================================================================
+   Preisliste
+   ================================================================== */
+
+.rv-prices {
+    display: grid;
+    gap: clamp(2rem, 4vw, 3.5rem);
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+/*
+ * Auf der Preisseite steht oft nur eine Karte. Ohne Begrenzung zoege
+ * sie sich ueber die volle Breite, und die gepunktete Fuehrungslinie
+ * waere endlos lang. Deshalb hier eine Obergrenze je Spalte - bei
+ * mehreren Karten fliessen sie weiterhin nebeneinander.
+ */
+.rv-prices--seite {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 34rem));
+    justify-content: start;
+}
+
+.rv-group__title {
+    font-family: var(--rv-sans);
+    /* Tailwinds Reset nimmt Ueberschriften die Fettung weg, deshalb
+       hier ausdruecklich - sonst stehen die Spaltentitel duenn da. */
+    font-weight: 700;
+    font-size: var(--rv-t-klein);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--rv-rule);
+    margin-bottom: 0.75rem;
+}
+
+.rv-item { display: flex; align-items: baseline; gap: 0.5rem; padding: 0.55rem 0; }
+
+/* die gepunktete Fuehrungslinie zwischen Leistung und Preis */
+.rv-item__lead {
+    flex: 1;
+    min-width: 1.5rem;
+    border-bottom: 1px dotted var(--rv-rule);
+    transform: translateY(-0.3em);
+}
+
+.rv-item__price {
+    font-family: var(--rv-sans);
+    font-size: 0.9rem;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+}
+
+/* ==================================================================
+   Zweispaltiger Block
+   ================================================================== */
+
+.rv-split {
+    display: grid;
+    gap: clamp(2rem, 5vw, 4rem);
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+}
+
+.rv-stack > * + * { margin-top: 1.15rem; }
+
+/* ==================================================================
+   Bilder und Platzhalter
+   ================================================================== */
+
+.rv-photo {
+    border-radius: var(--rv-r-m);
+    position: relative;
+    /* Sand Cream mit einem Viertel Heather Beige - hebt sich vom
+       Abschnitt ab, ohne aus der Palette zu fallen. */
+    background: #DBD3C6;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    aspect-ratio: 4 / 5;
+}
+
+.rv-photo--square { aspect-ratio: 1 / 1; }
+
+.rv-photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
+.rv-photo__hint {
+    font-family: var(--rv-sans);
+    font-size: var(--rv-t-klein);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    /*
+     * Frueher ein hart codiertes Grau, das die Palette nicht kannte -
+     * auf warmem Grund ein grauer Fleck, und mit 2.62:1 ausserdem zu
+     * schwach. Jetzt Espresso auf dem Kasten: 8.27:1. Leise bleibt es
+     * durch Schriftgroesse und Sperrung, nicht durch Blaesse.
+     */
+    color: var(--rv-ink);
+    text-align: center;
+    padding: 1rem;
+}
+
+/* ==================================================================
+   Team
+   ================================================================== */
+
+/*
+ * Hoechstens drei Karten pro Reihe.
+ *
+ * Feste drei Spalten statt auto-fit: auto-fit fuellt die Zeile so voll
+ * wie moeglich, bei sechs Mitgliedern standen deshalb fuenf nebeneinander
+ * und eines allein darunter. Mit festen Spalten ergibt sich 3 + 3, und
+ * bei fuenf Mitgliedern 3 + 2 - die zweite Reihe bleibt dabei am selben
+ * Raster ausgerichtet, statt sich in die Breite zu ziehen.
+ *
+ * Schmalere Fenster bekommen zwei bzw. eine Spalte, siehe unten bei
+ * "Handy und Tablet".
+ */
+.rv-team {
+    display: grid;
+    gap: clamp(1.5rem, 3vw, 2.5rem);
+    grid-template-columns: repeat(3, 1fr);
+}
+
+/*
+ * Kartentitel stehen ueber dem Fliesstext - vorher 17px gegen 18px,
+ * also kleiner als der Text darunter. Jetzt 20px, enger gesetzt.
+ */
+.rv .rv-member__name {
+    font-family: var(--rv-sans);
+    font-weight: 700;
+    letter-spacing: 0;
+    font-size: 1.25rem;
+    line-height: 1.3;
+    margin-top: var(--rv-s-3);
+}
+
+.rv .rv-member__role {
+    font-family: var(--rv-sans);
+    font-size: var(--rv-t-mittel);
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--rv-muted);
+    margin-top: var(--rv-s-1);
+}
+
+/* ==================================================================
+   Parfums
+
+   Eigene Unterseite. Bewusst dasselbe Raster wie Team und Preise,
+   damit die Seite nicht wie ein Fremdkoerper wirkt.
+   ================================================================== */
+
+/* Ebenfalls hoechstens drei pro Reihe, gleiche Begruendung wie beim Team. */
+/*
+ * Fuenf je Reihe auf grossen Bildschirmen, auf Wunsch des Kunden. Die
+ * Karten werden damit schmal (bei 1137px Breite rund 210px), deshalb
+ * enger Abstand und im Umbruch darunter das Profil untereinander statt
+ * nebeneinander.
+ */
+.rv-parfums {
+    display: grid;
+    gap: clamp(1.25rem, 2vw, 1.75rem);
+    grid-template-columns: repeat(5, 1fr);
+}
+
+/* Profil in schmalen Karten: Beschriftung ueber dem Wert */
+.rv .rv-parfum .rv-profil {
+    gap: 0.15rem 0;
+    grid-template-columns: 1fr;
+}
+
+.rv .rv-parfum .rv-profil__label {
+    padding-top: 0.55rem;
+}
+
+.rv .rv-parfum .rv-profil__label:first-child {
+    padding-top: 0;
+}
+
+.rv-parfum .rv-parfum__body {
+    padding: 1rem 1.1rem 1.25rem;
+}
+
+/*
+ * ACHTUNG SPEZIFITAET - gilt fuer diesen ganzen Abschnitt.
+ *
+ * Weiter oben steht der Reset aus dem urspruenglichen Entwurf:
+ *     .rv h1, .rv h2, .rv h3, .rv p, .rv ul, .rv figure, .rv table { margin: 0 }
+ * Das ist eine Klasse plus ein Elementname (0,1,1) und schlaegt damit
+ * jede einfache Klasse (0,1,0). Ein "margin-top" auf .rv-parfum__note
+ * waere wirkungslos - gemessen 0px, obwohl gesetzt.
+ *
+ * Deshalb stehen alle Abstaende hier mit ".rv " davor (0,2,0).
+ * Betrifft nur Elemente, die im Reset auftauchen: p, h1-h3, ul,
+ * figure, table. Bei div und span reicht die einfache Klasse.
+ */
+.rv .rv-group__title--wide { margin-bottom: 2rem; }
+
+.rv-parfum__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 1.25rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid var(--rv-rule);
+}
+
+.rv-parfum__name {
+    font-family: var(--rv-sans);
+    font-weight: 700;
+    font-size: 1.25rem;
+    letter-spacing: 0;
+    line-height: 1.3;
+}
+
+.rv-parfum__price {
+    font-family: var(--rv-sans);
+    font-size: 0.9rem;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+}
+
+/*
+ * Das Profil eines Dufts: Beschriftung links, Wert rechts, als echte
+ * Definitionsliste. Zwei Gruppen je Karte - Duftpyramide, dann wann
+ * und wofuer -, jede mit einer Haarlinie darueber.
+ *
+ * Feste Breite fuer die Beschriftung, damit beide Gruppen auf derselben
+ * Kante stehen. Eine laengere, selbst gewaehlte Beschriftung bricht um,
+ * statt die Spalte zu verschieben.
+ *
+ * dl und dd stehen nicht im Reset, bringen aber eigene Browser-Abstaende
+ * mit (dd: 40px links). Die werden hier ausdruecklich genullt.
+ */
+.rv .rv-profil {
+    border-top: 1px solid var(--rv-rule);
+    display: grid;
+    gap: 0.4rem 1rem;
+    grid-template-columns: 6rem 1fr;
+    margin: 1rem 0 0;
+    padding-top: 0.85rem;
+}
+
+/* Die zweite Profilgruppe braucht keine eigene Linie - der Abstand
+   trennt genug. Vorher drei Linien pro Parfum-Karte. */
+.rv .rv-profil + .rv-profil {
+    border-top-color: transparent;
+    margin-top: 0.6rem;
+    padding-top: 0;
+}
+
+.rv-profil__label {
+    color: var(--rv-muted);
+    font-family: var(--rv-sans);
+    font-size: var(--rv-t-klein);
+    letter-spacing: 0.01em;
+    line-height: 1.5;
+    padding-top: 0.12rem;
+    text-transform: none;
+}
+
+.rv .rv-profil__wert {
+    font-size: var(--rv-t-lesen);
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* "Erinnert an" ist ein Bild, keine Zutatenliste - kursiv gesetzt. */
+.rv-profil__wert--zitat {
+    font-style: italic;
+}
+
+.rv .rv-parfum__text { margin-top: 0.85rem; }
+
+.rv .rv-parfum__size {
+    font-family: var(--rv-sans);
+    font-size: var(--rv-t-klein);
+    color: var(--rv-muted);
+    margin-top: 1.15rem;
+}
+
+/*
+ * Die Fussnote gehoert zum ganzen Abschnitt, nicht zur ersten Spalte.
+ * Ohne deutlichen Abstand liest sie sich wie ein Teil der ersten Karte,
+ * weil sie genau darunter beginnt.
+ */
+.rv .rv-parfums__footnote {
+    color: var(--rv-muted);
+    max-width: 52ch;
+    margin-top: clamp(3rem, 6vw, 4.5rem);
+}
+
+/* ------------------------------------------------------------------
+   DUFTFAMILIEN
+
+   Die Farbe ist ein Punkt, keine Flaeche. Die Seite bleibt
+   schwarz-weiss; zwoelf gefuellte Kacheln haetten sie gekippt.
+
+   Die Farbe kommt als --rv-familie aus dem Template, weil Punkt und
+   Ring sie beide brauchen.
+   ------------------------------------------------------------------ */
+
+.rv .rv-familien {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 1rem;
+    margin-top: 0.9rem;
+}
+
+.rv-familie {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-family: var(--rv-sans);
+    font-size: var(--rv-t-klein);
+    letter-spacing: 0.01em;
+    text-transform: none;
+    color: var(--rv-ink);
+    white-space: nowrap;
+}
+
+.rv-familie__punkt {
+    background: var(--rv-familie, var(--rv-muted));
+    border-radius: 50%;
+    flex: none;
+    height: 0.55rem;
+    width: 0.55rem;
+}
+
+/*
+ * Sehr helle Farben - "Weiss - Blumig" - verschwinden auf hellem Grund
+ * spurlos. Der Helper meldet das ueber "hell", und statt der nackten
+ * Flaeche kommt ein Ring.
+ */
+.rv-familie__punkt--hell {
+    box-shadow: inset 0 0 0 1px var(--rv-muted);
+}
+
+/* ------------------------------------------------------------------
+   FILTER DER PARFUM-SEITE
+
+   Oben die Zielgruppe als Pillen-Segmentwahl, darunter die Duftfamilien
+   als Chips zum Antippen - sichtbar statt in einem Klappmenue, mehrere
+   zugleich. Aktiv heisst: gefuellte Pille in Espresso.
+
+   Auf schmalen Bildschirmen werden die Chips zu einer wischbaren Reihe
+   (Umbruch 560px).
+
+   Das "hidden" braucht Nachdruck, weil "display: flex" die
+   Voreinstellung des Browsers sonst ueberstimmt und die Leiste doch
+   sichtbar waere.
+   ------------------------------------------------------------------ */
+
+.rv-filterleiste {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    margin-bottom: clamp(2.5rem, 5vw, 3.5rem);
+}
+
+.rv-filterleiste[hidden] {
+    display: none;
+}
+
+.rv-filterleiste__kopf {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.25rem;
+}
+
+/* --- Segmentwahl: genau eine Zielgruppe --------------------------- */
+
+.rv-segment {
+    background: var(--rv-paper-2);
+    border: 1px solid rgba(183, 169, 149, 0.45);
+    border-radius: var(--rv-r-pill);
+    display: inline-flex;
+    gap: 0.2rem;
+    padding: 0.25rem;
+}
+
+.rv-segment__btn {
+    background: none;
+    border: 0;
+    border-radius: var(--rv-r-pill);
+    color: var(--rv-muted);
+    cursor: pointer;
+    font-family: var(--rv-sans);
+    font-size: var(--rv-t-mittel);
+    letter-spacing: 0.01em;
+    min-height: 2.75rem;
+    padding: 0.5rem 1.1rem;
+    transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+    white-space: nowrap;
+}
+
+.rv-segment__btn:hover {
+    color: var(--rv-ink);
+}
+
+.rv-segment__btn.is-aktiv {
+    background: var(--rv-ink);
+    box-shadow: var(--rv-schatten-klein);
+    color: var(--rv-paper);
+}
+
+/* --- Chips: beliebig viele Duftfamilien --------------------------- */
+
+.rv-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.rv-chip {
+    align-items: center;
+    background: var(--rv-paper);
+    border: 1px solid rgba(183, 169, 149, 0.6);
+    border-radius: var(--rv-r-pill);
+    color: var(--rv-ink);
+    cursor: pointer;
+    display: inline-flex;
+    font-family: var(--rv-sans);
+    font-size: var(--rv-t-mittel);
+    gap: 0.5rem;
+    letter-spacing: 0.01em;
+    min-height: 2.75rem;
+    padding: 0.45rem 1rem;
+    transition: background 0.18s, color 0.18s, border-color 0.18s, transform 0.18s;
+    white-space: nowrap;
+}
+
+.rv-chip:hover {
+    border-color: var(--rv-ink);
+    transform: translateY(-1px);
+}
+
+.rv-chip.is-aktiv {
+    background: var(--rv-ink);
+    border-color: var(--rv-ink);
+    color: var(--rv-paper);
+}
+
+/* Der Farbpunkt behaelt im aktiven Chip seine Farbe; ein heller Ring
+   verhindert, dass dunkle Punkte auf Espresso verschwinden. */
+.rv-chip.is-aktiv .rv-familie__punkt {
+    box-shadow: 0 0 0 2px rgba(231, 225, 214, 0.6);
+}
+
+/* --- Zuruecksetzen ------------------------------------------------ */
+
+.rv-zuruecksetzen {
+    background: none;
+    border: 0;
+    border-bottom: 1px solid var(--rv-rule);
+    color: var(--rv-muted);
+    cursor: pointer;
+    font-family: var(--rv-sans);
+    font-size: var(--rv-t-mittel);
+    letter-spacing: 0.01em;
+    padding: 0.2rem 0;
+    transition: color 0.18s, border-color 0.18s;
+}
+
+.rv-zuruecksetzen:hover {
+    border-bottom-color: var(--rv-ink);
+    color: var(--rv-ink);
+}
+
+/* ------------------------------------------------------------------
+   SEITENZAHLEN
+
+   Unter dem Raster, mittig: "21-40 von 156", darunter Zurueck, die
+   Zahlen als Pillen, Weiter. Dieselbe Sprache wie die Chips.
+   ------------------------------------------------------------------ */
+
+.rv-pager {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: clamp(2rem, 4vw, 3rem);
+}
+
+.rv-pager[hidden] {
+    display: none;
+}
+
+.rv .rv-pager__status {
+    color: var(--rv-muted);
+    font-family: var(--rv-sans);
+    font-size: var(--rv-t-mittel);
+}
+
+.rv-pager__zeile {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    justify-content: center;
+}
+
+.rv-pager__btn {
+    align-items: center;
+    background: var(--rv-paper);
+    border: 1px solid rgba(183, 169, 149, 0.6);
+    border-radius: var(--rv-r-pill);
+    color: var(--rv-ink);
+    cursor: pointer;
+    display: inline-flex;
+    font-family: var(--rv-sans);
+    font-size: var(--rv-t-mittel);
+    justify-content: center;
+    letter-spacing: 0.01em;
+    min-height: 2.75rem;
+    min-width: 2.75rem;
+    padding: 0.45rem 0.9rem;
+    transition: background 0.18s, color 0.18s, border-color 0.18s;
+}
+
+.rv-pager__btn:hover:not(:disabled) {
+    border-color: var(--rv-ink);
+}
+
+.rv-pager__btn.is-aktiv {
+    background: var(--rv-ink);
+    border-color: var(--rv-ink);
+    color: var(--rv-paper);
+}
+
+.rv-pager__btn:disabled {
+    cursor: default;
+    opacity: 0.4;
+}
+
+.rv-pager__punkte {
+    align-self: center;
+    color: var(--rv-muted);
+    padding: 0 0.25rem;
+}
+
+/* Beim Seitenwechsel wird hierher gescrollt - unter die feste Kopfzeile */
+.rv-parfums {
+    scroll-margin-top: 5.5rem;
+}
+
+/* Ausgefilterte Karten. Eine eigene Klasse statt "hidden", damit sie
+   sich spaeter ohne Umbau weich ein- und ausblenden liessen. */
+.rv-parfum--aus {
+    display: none;
+}
+
+/* Wenn die Auswahl nichts uebrig laesst. Lieber ein ruhiger Satz als
+   ein Loch, in dem man den Fehler bei sich sucht. */
+.rv .rv-parfums__leer {
+    color: var(--rv-muted);
+    margin-top: 1rem;
+}
+
+.rv-parfums__cta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+/* Begrenzt Fliesstext auf eine gut lesbare Zeilenlaenge */
+.rv-measure { max-width: 60ch; }
+
+/* ==================================================================
+   Specials
+
+   Startseite: hoechstens drei Karten, dasselbe Raster wie das Team.
+   Eigene Seite: ein Eintrag je Zeile, Bild und Text wechseln von
+   Eintrag zu Eintrag die Seite.
+
+   ACHTUNG SPEZIFITAET: h2, h3, p und a stehen im Reset (.rv p usw.,
+   0,1,1). Alles, was dort einen Abstand oder eine Farbe setzt, traegt
+   deshalb ".rv " davor.
+   ================================================================== */
+
+.rv-specials {
+    display: grid;
+    gap: clamp(1.5rem, 3vw, 2.5rem);
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.rv .rv-special-karte__titel {
+    font-family: var(--rv-sans);
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: 0;
+    line-height: 1.3;
+    margin-top: var(--rv-s-4);
+}
+
+.rv .rv-special-karte__info,
+.rv .rv-special__info {
+    color: var(--rv-muted);
+    font-family: var(--rv-sans);
+    font-size: var(--rv-t-mittel);
+    letter-spacing: 0;
+    margin-top: var(--rv-s-1);
+    text-transform: none;
+}
+
+.rv .rv-special-karte__text {
+    margin-top: var(--rv-s-2);
+}
+
+/* Die Links: gesperrte Kleinschrift mit Haarlinie, die beim Zeigen
+   dunkel wird - dieselbe Sprache wie "Zuruecksetzen" im Filter. */
+.rv .rv-special-karte__link,
+.rv .rv-parfum__details,
+.rv .rv-specials__alle a {
+    border-bottom: 1px solid var(--rv-rule);
+    color: var(--rv-ink);
+    display: inline-block;
+    font-family: var(--rv-sans);
+    font-size: var(--rv-t-klein);
+    letter-spacing: 0.1em;
+    padding-bottom: 0.15rem;
+    text-decoration: none;
+    text-transform: uppercase;
+    transition: border-color 0.2s;
+}
+
+.rv .rv-special-karte__link,
+.rv .rv-parfum__details {
+    margin-top: var(--rv-s-3);
+}
+
+.rv .rv-special-karte__link:hover,
+.rv .rv-parfum__details:hover,
+.rv .rv-specials__alle a:hover {
+    border-bottom-color: var(--rv-ink);
+}
+
+.rv .rv-specials__alle {
+    margin-top: clamp(2rem, 4vw, 3rem);
+}
+
+/* --- Eigene Seite ------------------------------------------------ */
+
+.rv-special-liste {
+    display: grid;
+    gap: clamp(3rem, 7vw, 6rem);
+}
+
+/*
+ * scroll-margin, damit ein Sprung von der Startseite den Titel nicht
+ * direkt an die Fensterkante klebt.
+ */
+.rv-special {
+    align-items: center;
+    display: grid;
+    gap: clamp(1.5rem, 5vw, 5rem);
+    grid-template-columns: 1fr 1fr;
+    scroll-margin-top: 5rem;
+}
+
+.rv-special:nth-child(even) .rv-special__bild {
+    order: 2;
+}
+
+.rv .rv-special__titel {
+    font-family: var(--rv-sans);
+    font-size: clamp(1.4rem, 1rem + 1.4vw, 2.2rem);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+}
+
+.rv .rv-special__info {
+    margin-top: 0.75rem;
+}
+
+.rv .rv-special__text {
+    margin-top: 1.25rem;
+    max-width: 52ch;
+}
+
+/* ==================================================================
+   Lange Texte
+
+   Namen, Titel und Beschriftungen tippt der Kunde selbst ein - und sie
+   sind nicht immer so kurz wie die Vorgaben. Nichts davon darf seitlich
+   ueber den Rand laufen, erst recht nicht auf dem Handy.
+
+   overflow-wrap: anywhere statt break-word, mit Absicht: Nur "anywhere"
+   verkleinert auch die Mindestbreite eines Elements. Mit "break-word"
+   duerfte ein langes Wort zwar umbrechen, wuerde aber vorher trotzdem
+   eine Rasterspalte aufsprengen.
+
+   word-break: break-word ist der Rueckfall fuer aeltere Safari-Versionen,
+   die "anywhere" noch nicht kennen.
+
+   Gepruefte Faelle unter /lang, /lang-specials und /lang-parfums.
+   ================================================================== */
+
+.rv-h2,
+.rv-lead,
+.rv-prose,
+.rv-group__title,
+.rv-parfum__name,
+.rv-member__name,
+.rv-member__role,
+.rv-special-karte__titel,
+.rv-special-karte__info,
+.rv-special-karte__text,
+.rv-special__titel,
+.rv-special__info,
+.rv-detail__name,
+.rv-detail__kurz,
+.rv-profil__wert,
+.rv-item > :first-child {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+/* Knoepfe: lieber zwei Zeilen als ein Knopf breiter als der Bildschirm. */
+.rv .rv-btn {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+/* Raster- und Flex-Kinder duerfen schmaler werden als ihr laengstes Wort. */
+.rv-team > *,
+.rv-parfums > *,
+.rv-specials > *,
+.rv-special > *,
+.rv-prices > *,
+.rv-visit > *,
+.rv-hero__foot > * {
+    min-width: 0;
+}
+
+/* ==================================================================
+   Dunkles Band
+
+   Ein Abschnitt in Espresso Rust, damit sich etwas Besonderes auch
+   besonders abhebt. Nachgerechnet, nicht nach Gefuehl:
+
+     Sand Cream auf Espresso      9.43:1   Ueberschrift, Text
+     Heather Beige auf Espresso   5.33:1   Nebentexte
+     Brushed Brass auf Espresso   5.09:1   Beschriftungen, Links
+
+   Olive Sage traegt hier keine Schrift - dunkel auf dunkel.
+
+   Die Farben werden als Variablen fuer den Abschnitt neu gesetzt. Alles
+   darin - Ueberschrift, Linie, Karten - uebernimmt sie von selbst, ohne
+   eigene Regel.
+   ================================================================== */
+
+.rv-section--dunkel {
+    --rv-ink: #E7E1D6;
+    --rv-muted: #B7A995;
+    --rv-rule: rgba(231, 225, 214, 0.2);
+    background: #4B2E20;
+    border-top-color: transparent;
+    color: var(--rv-ink);
+}
+
+/* Platzhalter-Kasten eine Spur heller als der Grund, sonst verschwindet er. */
+.rv-section--dunkel .rv-photo {
+    background: #5E4033;
+}
+
+.rv-section--dunkel .rv-head__label,
+.rv .rv-section--dunkel .rv-special-karte__info {
+    color: var(--rv-akzent);
+}
+
+.rv .rv-section--dunkel .rv-special-karte__text {
+    color: var(--rv-muted);
+}
+
+.rv .rv-section--dunkel .rv-special-karte__link,
+.rv .rv-section--dunkel .rv-specials__alle a {
+    border-bottom-color: rgba(197, 162, 93, 0.45);
+    color: var(--rv-akzent);
+}
+
+.rv .rv-section--dunkel .rv-special-karte__link:hover,
+.rv .rv-section--dunkel .rv-specials__alle a:hover {
+    border-bottom-color: var(--rv-akzent);
+}
+
+/* --- Specials-Seite: ein Messingstrich ueber jedem Titel ---------- */
+
+/*
+ * Rein schmueckend, traegt keine Information - deshalb gilt hier keine
+ * Kontrastanforderung. Messing auf Sand Cream kaeme als Schrift nur auf
+ * 1.85:1, als kurzer Strich ist es genau richtig zurueckhaltend.
+ */
+.rv .rv-special__titel::before {
+    background: var(--rv-akzent);
+    content: "";
+    display: block;
+    height: 2px;
+    margin-bottom: 1.1rem;
+    width: 2.5rem;
+}
+
+/* ==================================================================
+   Karten mit Flaeche
+
+   Parfums und Specials liegen als Karten mit Rundung und leisem
+   Schatten auf dem Abschnitt; das Bild sitzt buendig oben, der Inhalt
+   hat Innenabstand. Beim Zeigen hebt sich die Karte einen Hauch.
+   Preiskarten bekommen einen Rahmen mit derselben Rundung.
+   ================================================================== */
+
+.rv-parfum,
+.rv-special-karte {
+    background: var(--rv-paper);
+    border-radius: var(--rv-r-m);
+    box-shadow: var(--rv-schatten-klein);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: box-shadow 0.25s, transform 0.25s;
+}
+
+/* Ausgefilterte Karten muessen weiter verschwinden - diese Regel steht
+   nach "display: flex" und hat mehr Gewicht. */
+.rv-parfum.rv-parfum--aus {
+    display: none;
+}
+
+.rv-parfum:hover,
+.rv-special-karte:hover {
+    box-shadow: var(--rv-schatten);
+    transform: translateY(-3px);
+}
+
+.rv-parfum .rv-photo,
+.rv-special-karte .rv-photo {
+    border-radius: 0;
+}
+
+.rv-parfum__body,
+.rv-special-karte__body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    padding: 1.1rem 1.35rem 1.5rem;
+}
+
+/* Kartenbild zoomt beim Zeigen leicht - nur, wenn es verlinkt ist */
+.rv-parfum__link .rv-photo img {
+    transition: transform 0.45s ease;
+}
+
+.rv-parfum__link:hover .rv-photo img {
+    transform: scale(1.03);
+}
+
+/* Der Details-Link als Umriss-Pille, unten an der Karte - so stehen
+   die Knoepfe aller Karten auf einer Hoehe. */
+.rv .rv-parfum__details {
+    align-self: flex-start;
+    border: 1px solid var(--rv-ink);
+    border-radius: var(--rv-r-pill);
+    margin-top: var(--rv-s-4);
+    padding: 0.55rem 1.1rem;
+    transition: background 0.2s, color 0.2s;
+}
+
+.rv .rv-parfum__details:hover {
+    background: var(--rv-ink);
+    color: var(--rv-paper);
+}
+
+.rv-parfum__body > .rv-parfum__details {
+    margin-top: auto;
+    padding-top: 0.55rem;
+}
+
+.rv-parfum__body > :last-child:not(.rv-parfum__details) {
+    margin-bottom: 0;
+}
+
+/* Wenn ein Details-Link folgt, braucht der Inhalt darueber Luft */
+.rv-parfum__body > * + .rv-parfum__details {
+    margin-top: calc(var(--rv-s-4) + 0.25rem);
+}
+
+/*
+ * Die Karte liegt heller auf dem Band (#5E4033 auf #4B2E20). Damit
+ * fallen Heather Beige und Brushed Brass darauf unter 4.5:1 - 4.04 und
+ * 3.85. Deshalb innerhalb der Karte zwei aufgehellte Toene, jeweils
+ * 30 Prozent Richtung Sand Cream gerechnet: 4.86 und 4.69:1.
+ */
+.rv-section--dunkel .rv-special-karte {
+    --rv-muted: #C5BAA9;
+    --rv-akzent: #CFB581;
+    background: #5E4033;
+    box-shadow: none;
+}
+
+.rv-section--dunkel .rv-special-karte .rv-photo {
+    background: #6A4A3B;
+}
+
+.rv-preiskarte {
+    background: var(--rv-paper);
+    border: 1px solid rgba(183, 169, 149, 0.5);
+    border-radius: var(--rv-r-m);
+    padding: 1.5rem 1.5rem 1rem;
+}
+
+/* ==================================================================
+   Parfum-Einzelseite
+
+   Bild links, Angaben rechts, darunter der Text aus dem Editor. Auf
+   schmalen Bildschirmen untereinander.
+   ================================================================== */
+
+.rv-detail {
+    align-items: start;
+    display: grid;
+    gap: clamp(2rem, 5vw, 5rem);
+    grid-template-columns: 5fr 7fr;
+}
+
+.rv-detail > * {
+    min-width: 0;
+}
+
+.rv .rv-detail__zurueck {
+    margin-bottom: var(--rv-s-5);
+}
+
+.rv .rv-detail__zurueck a {
+    border-bottom: 1px solid var(--rv-rule);
+    color: var(--rv-muted);
+    font-family: var(--rv-sans);
+    font-size: var(--rv-t-klein);
+    letter-spacing: 0.1em;
+    text-decoration: none;
+    text-transform: uppercase;
+    transition: color 0.2s, border-color 0.2s;
+}
+
+.rv .rv-detail__zurueck a:hover {
+    border-bottom-color: var(--rv-ink);
+    color: var(--rv-ink);
+}
+
+.rv .rv-detail__name {
+    font-family: var(--rv-sans);
+    font-size: clamp(1.6rem, 1rem + 2vw, 2.75rem);
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    line-height: 1.1;
+    margin-top: var(--rv-s-2);
+}
+
+.rv .rv-detail__preis {
+    font-family: var(--rv-sans);
+    font-size: 1.15rem;
+    margin-top: var(--rv-s-2);
+}
+
+.rv .rv-detail__kurz {
+    margin-top: var(--rv-s-4);
+    max-width: 60ch;
+}
+
+.rv-detail__mehr {
+    border-top: 1px solid var(--rv-rule);
+    margin-top: clamp(2.5rem, 5vw, 4rem);
+    padding-top: clamp(2rem, 4vw, 3rem);
+}
+
+.rv .rv-detail__mehr-titel {
+    font-family: var(--rv-sans);
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.25;
+    margin-bottom: var(--rv-s-4);
+}
+
+/* --- Karte auf der Uebersicht: Bild und Name als Link -------------- */
+
+.rv .rv-parfum__link {
+    color: inherit;
+    display: block;
+    text-decoration: none;
+}
+
+.rv .rv-parfum__name .rv-parfum__link {
+    display: inline;
+}
+
+.rv .rv-parfum__name .rv-parfum__link:hover {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+}
+
+/* ==================================================================
+   Oeffnungszeiten und Kontakt
+   ================================================================== */
+
+/*
+ * Dieselbe Spaltenaufteilung wie bei den Preisen. Das ist Absicht:
+ * beide Abschnitte gehoeren sichtbar zusammen, statt jeder fuer sich
+ * ein eigenes Raster zu erfinden.
+ */
+.rv-visit {
+    display: grid;
+    gap: clamp(2rem, 4vw, 3.5rem);
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+/* Kleine Beschriftung ueber einem Wert, z. B. "Telefon" */
+.rv-visit__label {
+    font-family: var(--rv-sans);
+    font-size: var(--rv-t-klein);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--rv-muted);
+}
+
+.rv-visit__value { margin-top: 0.15rem; }
+
+.rv-visit__block + .rv-visit__block { margin-top: 1.5rem; }
+
+.rv-visit__action { margin-top: 2rem; }
+
+.rv-visit__link { text-decoration: none; border-bottom: 1px solid var(--rv-rule); }
+.rv-visit__link:hover { border-bottom-color: var(--rv-ink); }
+
+.rv-hours { width: 100%; border-collapse: collapse; }
+
+.rv-hours td {
+    padding: 0.7rem 0;
+    border-bottom: 1px solid var(--rv-rule);
+    vertical-align: baseline;
+}
+
+.rv-hours tr:last-child td { border-bottom: 0; }
+
+.rv-hours td + td {
+    text-align: right;
+    font-family: var(--rv-sans);
+    font-size: 0.88rem;
+    white-space: nowrap;
+    padding-left: 1rem;
+}
+
+/* ==================================================================
+   Fusszeile
+   ================================================================== */
+
+.rv-foot {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: 2rem var(--rv-gutter);
+    border-top: 1px solid var(--rv-rule);
+    font-family: var(--rv-sans);
+    font-size: var(--rv-t-klein);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--rv-muted);
+}
+
+.rv-foot a { text-decoration: none; }
+.rv-foot a:hover { color: var(--rv-ink); }
+.rv-foot__links { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+
+/* ==================================================================
+   Fliesstext aus dem Publii-Editor
+
+   Der Kunde schreibt im WYSIWYG-Editor, Publii gibt daraus normales HTML
+   aus. Diese Regeln geben dem HTML ein Aussehen, ohne dass im Editor
+   Klassen vergeben werden muessen.
+   ================================================================== */
+
+.rv-prose > * + * { margin-top: 1.15rem; }
+
+.rv-prose h2 {
+    font-family: var(--rv-sans);
+    font-weight: 700;
+    font-size: 1.5rem;
+    letter-spacing: -0.01em;
+    line-height: 1.25;
+    margin-top: var(--rv-s-5);
+}
+
+.rv-prose h3 {
+    font-family: var(--rv-sans);
+    font-weight: 700;
+    font-size: 1.2rem;
+    line-height: 1.3;
+    margin-top: var(--rv-s-4);
+}
+
+.rv-prose strong { font-weight: 700; }
+
+.rv-prose a { text-decoration: none; border-bottom: 1px solid var(--rv-rule); }
+.rv-prose a:hover { border-bottom-color: var(--rv-ink); }
+
+.rv-prose ul { list-style: disc; padding-left: 1.25em; }
+.rv-prose ol { list-style: decimal; padding-left: 1.25em; }
+.rv-prose li + li { margin-top: 0.4em; }
+
+.rv-prose blockquote {
+    border-left: 2px solid var(--rv-ink);
+    padding-left: 1.25rem;
+    font-style: italic;
+}
+
+.rv-prose img { max-width: 100%; height: auto; }
+
+.rv-prose figcaption {
+    font-family: var(--rv-sans);
+    font-size: var(--rv-t-klein);
+    letter-spacing: 0.04em;
+    color: var(--rv-muted);
+    margin-top: 0.5rem;
+}
+
+/* ==================================================================
+   Handy und Tablet
+   ================================================================== */
+
+@media (max-width: 1100px) {
+    /* Fuenf Karten werden hier zu schmal - drei je Reihe */
+    .rv-parfums { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 820px) {
+    /*
+     * Klappmenue. Die Kopfzeile war auf dem Handy 146px hoch, das Menue
+     * stand auf drei Zeilen. Sobald main.js die Klasse setzt, klappt
+     * das Menue ein und oeffnet als Liste ueber die volle Breite - jede
+     * Zeile 44px hoch, gut zu treffen.
+     */
+    .rv-top--klappbar .rv-nav { display: none; }
+
+    .rv-top--klappbar .rv-nav.is-offen {
+        border-top: 1px solid var(--rv-rule);
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        margin-top: 0.5rem;
+        padding-top: 0.5rem;
+        width: 100%;
+    }
+
+    .rv-top--klappbar .rv-nav.is-offen a {
+        border-bottom: 0;
+        display: block;
+        padding: 0.75rem 0;
+    }
+
+    .rv-top--klappbar .rv-nav.is-offen .rv-menu {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .rv-split,
+    .rv-visit { grid-template-columns: 1fr; }
+
+    /* Drei Karten nebeneinander werden hier zu schmal */
+    .rv-team,
+    .rv-parfums,
+    .rv-specials { grid-template-columns: repeat(2, 1fr); }
+
+    .rv-parfums { gap: clamp(1.5rem, 3vw, 2.5rem); }
+
+    /* Specials-Seite: Bild ueber dem Text, und immer zuerst das Bild -
+       das Wechseln der Seite ergibt untereinander keinen Sinn mehr. */
+    .rv-special,
+    .rv-detail { grid-template-columns: 1fr; }
+
+    .rv-special:nth-child(even) .rv-special__bild { order: 0; }
+
+    .rv-hero__foot { align-items: flex-start; }
+}
+
+@media (max-width: 560px) {
+    /* Das Team bleibt zweispaltig - sechs Quadrate untereinander
+       waeren 1350px Bildlauf fuer sechs Namen. */
+    .rv-parfums,
+    .rv-specials,
+    .rv-prices { grid-template-columns: 1fr; }
+
+    .rv-team { gap: 1rem; }
+
+    /*
+     * Kartenbilder im Querformat. Ein Hochformat ueber die volle Breite
+     * ist 419px hoch; drei Specials machten allein 2126px Bildlauf.
+     * Fotos werden per object-fit mittig beschnitten.
+     */
+    .rv-special-karte .rv-photo,
+    .rv-parfum .rv-photo,
+    .rv-special__bild,
+    .rv-detail__bild { aspect-ratio: 4 / 3; }
+
+    /* Der Zurueck-Link ist nur 16px hoch - der Standardrand von 12px
+       oben und unten reicht dort nicht fuer 44px. Mit "p" im Selektor,
+       damit die Regel unabhaengig von ihrer Stelle gegen die allgemeine
+       Tippflaechen-Regel weiter unten gewinnt. */
+    .rv p.rv-detail__zurueck a::after { inset: -0.95rem -0.25rem; }
+
+    /* Segmentwahl ueber die volle Breite; die Chips als wischbare Reihe
+       bis an den Rand - zwoelf Chips untereinander waeren vier Zeilen,
+       bevor der erste Duft kommt. Die Kanten laufen weich aus. */
+    .rv-segment {
+        display: flex;
+        width: 100%;
+    }
+
+    .rv-segment__btn {
+        flex: 1;
+        padding: 0.5rem 0.4rem;
+    }
+
+    .rv-chips {
+        flex-wrap: nowrap;
+        margin: 0 calc(var(--rv-gutter) * -1);
+        -webkit-mask-image: linear-gradient(to right, transparent, #000 0.75rem, #000 calc(100% - 2.5rem), transparent);
+        mask-image: linear-gradient(to right, transparent, #000 0.75rem, #000 calc(100% - 2.5rem), transparent);
+        overflow-x: auto;
+        padding: 0.25rem var(--rv-gutter) 0.5rem;
+        scroll-snap-type: x proximity;
+        scrollbar-width: none;
+    }
+
+    .rv-chips::-webkit-scrollbar {
+        display: none;
+    }
+
+    .rv-chip {
+        flex: none;
+        scroll-snap-align: start;
+    }
+
+    /*
+     * Tippflaechen. Kleine Textlinks bleiben optisch, wie sie sind, bekommen
+     * aber eine unsichtbare Flaeche von mindestens 44px Hoehe - die Groesse,
+     * die ein Finger sicher trifft. Ueber ::after, damit sich weder
+     * Unterstrich noch Zeilenabstand verschieben. Vorher: Menuelinks 23px.
+     */
+    .rv-nav a,
+    .rv-top__mark,
+    .rv .rv-special-karte__link,
+    .rv .rv-parfum__details,
+    .rv .rv-parfum__name .rv-parfum__link,
+    .rv .rv-detail__zurueck a,
+    .rv .rv-specials__alle a,
+    .rv-visit__link,
+    .rv-foot a {
+        position: relative;
+    }
+
+    .rv-nav a::after,
+    .rv-top__mark::after,
+    .rv .rv-special-karte__link::after,
+    .rv .rv-parfum__details::after,
+    .rv .rv-parfum__name .rv-parfum__link::after,
+    .rv .rv-detail__zurueck a::after,
+    .rv .rv-specials__alle a::after,
+    .rv-visit__link::after,
+    .rv-foot a::after {
+        content: "";
+        inset: -0.75rem -0.25rem;
+        position: absolute;
+    }
+}
+
+/* ==================================================================
+   Bewegung reduzieren
+   ================================================================== */
+
+@media (prefers-reduced-motion: no-preference) {
+    html { scroll-behavior: smooth; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rv * { animation: none !important; transition: none !important; }
+}
+
+
+/* Balayage: Bild, Text und eine optionale Galerie eigener Arbeiten. */
+.rv-balayage__intro { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,0.9fr); gap:clamp(2rem,7vw,7rem); align-items:center; }
+.rv-balayage__intro--ohne-bild { grid-template-columns:minmax(0,52rem); }
+
+/* Vorher/Nachher liegt deckungsgleich in einem einzigen Bildrahmen. */
+.rv-balayage .rv-balayage__gallery { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.rv-balayage .rv-balayage__work--paar { grid-column:auto; }
+.rv-compare { position:relative; width:100%; aspect-ratio:4/5; overflow:hidden; border-radius:var(--rv-r-m); background:var(--rv-paper-2); isolation:isolate; }
+.rv-compare img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center; user-select:none; pointer-events:none; }
+.rv-compare__before { clip-path:inset(0 calc(100% - var(--rv-compare-position)) 0 0); }
+.rv-compare__label { position:absolute; top:1rem; padding:0.35rem 0.7rem; border-radius:var(--rv-r-s); background:var(--rv-paper); color:var(--rv-ink); font-family:var(--rv-sans); font-size:var(--rv-t-klein); pointer-events:none; }
+.rv-compare__label--before { left:1rem; }
+.rv-compare__label--after { right:1rem; }
+.rv-compare.is-after-only .rv-compare__label--before, .rv-compare.is-before-only .rv-compare__label--after { visibility:hidden; }
+.rv-compare__divider { position:absolute; top:0; bottom:0; left:var(--rv-compare-position); width:2px; transform:translateX(-50%); background:var(--rv-paper); box-shadow:0 0 4px rgba(0,0,0,0.35); pointer-events:none; }
+.rv-compare__handle { display:none; position:absolute; top:50%; left:clamp(24px,var(--rv-compare-position),calc(100% - 24px)); transform:translate(-50%,-50%); width:48px; height:48px; align-items:center; justify-content:center; border:2px solid var(--rv-paper); border-radius:50%; background:var(--rv-ink); color:var(--rv-paper); font:26px/1 var(--rv-sans); box-shadow:var(--rv-schatten-klein); pointer-events:none; }
+.rv-compare.is-interactive .rv-compare__handle { display:flex; }
+.rv-compare .rv-compare__range { position:absolute; inset:0; width:100%; height:100%; margin:0; padding:0; opacity:0; cursor:ew-resize; touch-action:pan-y; direction:ltr; }
+.rv-compare:focus-within { outline:3px solid var(--rv-ink); outline-offset:4px; }
+@media(max-width:600px) {
+ .rv-balayage .rv-balayage__gallery { grid-template-columns:minmax(0,1fr); }
+ .rv-balayage .rv-balayage__images .rv-photo { aspect-ratio:4/5; }
+}
+.rv .rv-balayage__title { font-family:var(--rv-sans); font-size:clamp(2.8rem,6.8vw,6.5rem); font-weight:700; line-height:1; letter-spacing:-0.045em; color:var(--rv-olive); margin:1rem 0 1.75rem; overflow-wrap:anywhere; }
+.rv-balayage__text { max-width:34rem; white-space:pre-line; }
+.rv-balayage__hero { max-height:660px; }
+.rv-balayage__gallery { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:2rem; align-items:start; }
+.rv-balayage__work--paar { grid-column:auto; }
+.rv-balayage__images { display:grid; grid-template-columns:minmax(0,1fr); gap:1rem; }
+.rv-balayage__work--paar .rv-balayage__images { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.rv-balayage__caption-label { display:block; font-family:var(--rv-sans); font-size:var(--rv-t-klein); text-transform:uppercase; letter-spacing:0.1em; margin-top:0.75rem; color:var(--rv-muted); }
+.rv-balayage__work figcaption { margin-top:0.75rem; overflow-wrap:anywhere; }
+.rv-balayage__text { overflow-wrap:anywhere; }
+@media(max-width:820px) {
+ .rv-balayage__intro { grid-template-columns:minmax(0,1fr); gap:2rem; }
+ .rv-balayage__hero { width:100%; max-height:none; aspect-ratio:4/3; }
+ .rv-balayage__gallery { grid-template-columns:minmax(0,1fr); gap:1.5rem; }
+}
+@media(max-width:480px) {
+ .rv-balayage__gallery { grid-template-columns:minmax(0,1fr); }
+ .rv-balayage__work--paar { grid-column:auto; }
+ .rv-balayage__work--paar .rv-balayage__images { gap:0.65rem; }
+}
+
+
+/* Produktfotos vollstaendig zeigen, auch auf Mobilgeraeten und Detailseiten. */
+.rv .rv-parfum-photo { aspect-ratio:1 / 1; }
+.rv .rv-parfum-photo img { object-fit:contain; object-position:center center; }
+/* Kartenbilder auf Wunsch flaechig strecken, ohne Bildteile abzuschneiden. */
+.rv .rv-parfum .rv-parfum-photo img { object-fit:fill; }
+.rv .rv-parfum__link:hover .rv-parfum-photo img { transform:none; }
+.rv-promotion { display:grid; background:var(--rv-ink); color:var(--rv-paper); border-radius:var(--rv-r-m); overflow:hidden; }
+.rv-perfume-highlights { padding-top:2.5rem; padding-bottom:2.5rem; }
+.rv-highlights-grid--three { grid-template-columns:repeat(3,minmax(0,1fr)); }
+@media(max-width:820px) {
+ .rv-highlights-grid--three { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media(max-width:560px) { .rv-highlights-grid--three { grid-template-columns:minmax(0,1fr); } }
+
+
+/* Schmales Angebotslaufband: nahtlos von links nach rechts. */
+.rv .rv-perfume-promotion { padding-top:1rem; padding-bottom:1rem; }
+.rv-ticker { display:flex; align-items:stretch; border-radius:var(--rv-r-s); }
+.rv-ticker__viewport { overflow:hidden; flex:1; min-width:0; }
+.rv-ticker__track { display:flex; width:max-content; animation:rv-ticker-right 38s linear infinite; }
+.rv .rv-ticker__group { display:flex; align-items:center; flex-shrink:0; gap:1.5rem; min-width:100vw; padding:1rem 1.5rem; font-family:var(--rv-sans); font-size:var(--rv-t-mittel); line-height:1.4; white-space:nowrap; }
+.rv-ticker__label { letter-spacing:0.08em; text-transform:uppercase; font-size:var(--rv-t-klein); }
+.rv-ticker__separator { color:var(--rv-akzent); margin:0 1rem; }
+.rv-ticker__image { width:32px; height:32px; object-fit:contain; flex-shrink:0; }
+.rv-ticker__toggle { border:0; border-left:1px solid var(--rv-rule); border-radius:0; padding:0 1rem; min-height:44px; font:inherit; font-family:var(--rv-sans); font-size:var(--rv-t-klein); background:var(--rv-ink); color:var(--rv-paper); cursor:pointer; }
+.rv .rv-ticker__toggle:focus-visible { outline:2px solid var(--rv-paper); outline-offset:-4px; }
+.rv-ticker:hover .rv-ticker__track, .rv-ticker.is-paused .rv-ticker__track { animation-play-state:paused; }
+.rv .rv-ticker__note { margin-top:0.6rem; font-family:var(--rv-sans); font-size:var(--rv-t-klein); color:var(--rv-muted); white-space:pre-line; }
+@keyframes rv-ticker-right { from { transform:translateX(-50%); } to { transform:translateX(0); } }
+@media(prefers-reduced-motion:reduce) {
+ .rv-ticker__track { animation:none; transform:none; width:auto; }
+ .rv .rv-ticker__group { white-space:normal; flex-wrap:wrap; min-width:0; gap:0.6rem 1rem; overflow-wrap:anywhere; }
+ .rv-ticker__group[aria-hidden="true"], .rv-ticker__toggle { display:none; }
+}
+
+
+/* Zusammenhaengende Vorschau und redaktionelle Inhalte. */
+.rv-demo-notice { padding:0.6rem var(--rv-gutter); background:var(--rv-paper-2); border-bottom:1px solid var(--rv-rule); font-family:var(--rv-sans); font-size:var(--rv-t-klein); color:var(--rv-muted); }
+.rv-demo-notice .rv-wrap { display:block; }
+.rv-faq { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.5fr); gap:3rem; }
+.rv-faq__item { border-bottom:1px solid var(--rv-rule); padding:1.1rem 0; }
+.rv-faq__item:first-child { border-top:1px solid var(--rv-rule); }
+.rv-faq__item summary { cursor:pointer; font-family:var(--rv-sans); font-weight:600; }
+.rv-faq__item summary:focus-visible { outline:2px solid var(--rv-ink); outline-offset:4px; }
+.rv .rv-faq__item p { margin-top:1rem; white-space:pre-line; overflow-wrap:anywhere; }
+.rv .rv-visit-notice { margin-bottom:2rem; max-width:60ch; white-space:pre-line; }
+.rv .rv-section-link { margin-top:2rem; }
+.rv .rv-prose address { font-style:normal; margin:1rem 0; }
+.rv .rv-prose h2 { font-family:var(--rv-sans); font-size:clamp(1.35rem,2.5vw,1.9rem); line-height:1.2; margin:2rem 0 0.8rem; }
+.rv .rv-prose h3 { font-family:var(--rv-sans); font-size:1.15rem; margin:1.5rem 0 0.6rem; }
+.rv .rv-prose a { overflow-wrap:anywhere; }
+@media(max-width:820px) { .rv-faq { grid-template-columns:minmax(0,1fr); gap:1rem; } }
+
+
+/* Balayage: redaktioneller Einstieg, Vorteile, Ablauf und einheitliche Galerie. */
+.rv-balayage__intro { grid-template-columns:minmax(0,1.05fr) minmax(0,0.95fr); gap:clamp(2rem,5vw,5rem); }
+.rv .rv-balayage__title { font-size:clamp(3.5rem,8vw,7.5rem); margin:1.25rem 0 1.5rem; }
+.rv .rv-balayage__subtitle { font-family:var(--rv-serif); font-size:clamp(1.65rem,2.7vw,2.55rem); line-height:1.2; white-space:pre-line; margin-bottom:1.5rem; }
+.rv .rv-balayage__text { font-size:clamp(1.05rem,1.3vw,1.2rem); line-height:1.65; max-width:52ch; }
+.rv .rv-balayage__body { margin-top:1.2rem; max-width:54ch; white-space:pre-line; overflow-wrap:anywhere; }
+.rv-balayage__hero { aspect-ratio:4/5; max-height:none; align-self:center; }
+.rv .rv-balayage__image-note { position:absolute; bottom:1rem; left:1rem; right:1rem; width:fit-content; padding:0.4rem 0.75rem; border-radius:var(--rv-r-s); background:var(--rv-paper); color:var(--rv-ink); font-family:var(--rv-sans); font-size:var(--rv-t-klein); }
+.rv-balayage__jump { display:inline-flex; align-items:center; gap:1.5rem; margin-top:2rem; padding-bottom:0.5rem; border-bottom:1px solid var(--rv-rule); font-family:var(--rv-sans); font-size:var(--rv-t-mittel); text-decoration:none; }
+.rv-balayage__jump:hover { border-color:currentColor; }
+.rv-balayage__benefits { background:var(--rv-muted); color:var(--rv-paper); }
+.rv-balayage__section-head { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:3rem; align-items:center; margin-bottom:3rem; }
+.rv .rv-balayage__benefits .rv-h2 { color:inherit; margin-bottom:0; }
+.rv-balayage__section-head p { max-width:55ch; }
+.rv-balayage .rv-h2 { white-space:pre-line; }
+.rv-balayage__benefit-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:clamp(1.5rem,4vw,4rem); }
+.rv-balayage__benefit-grid article { border-top:1px solid rgba(231,225,214,0.5); padding-top:1.5rem; }
+.rv .rv-balayage h3 { font-family:var(--rv-sans); font-size:1.25rem; line-height:1.3; margin-bottom:0.8rem; }
+.rv-balayage__process { display:grid; grid-template-columns:minmax(0,0.85fr) minmax(0,1.15fr); gap:clamp(2rem,7vw,7rem); }
+.rv .rv-balayage__steps { padding:0; margin:0; list-style:none; counter-reset:none; }
+.rv-balayage__steps li { display:grid; grid-template-columns:3rem minmax(0,1fr); gap:1.25rem; padding:1.75rem 0; border-top:1px solid var(--rv-rule); }
+.rv-balayage__steps li:first-child { padding-top:1.5rem; }
+.rv-balayage__steps li:last-child { padding-bottom:0; }
+.rv-balayage__step-number { font-family:var(--rv-sans); font-size:2rem; line-height:1.1; color:var(--rv-muted); }
+.rv .rv-balayage__gallery-text { max-width:65ch; margin:-0.5rem 0 2.5rem; }
+.rv-balayage__gallery { grid-template-columns:repeat(3,minmax(0,1fr)); gap:1.5rem; }
+.rv-balayage__work--paar { grid-column:span 2; }
+.rv-balayage__images { gap:1.5rem; }
+.rv-balayage__images .rv-photo { aspect-ratio:4/5; }
+.rv-balayage__work figcaption { font-family:var(--rv-sans); font-size:var(--rv-t-mittel); }
+.rv-balayage p { overflow-wrap:anywhere; }
+@media(max-width:820px) {
+ .rv-balayage__intro { grid-template-columns:minmax(0,1fr) minmax(0,0.85fr); gap:2rem; align-items:start; }
+ .rv-balayage__hero { aspect-ratio:4/5; }
+ .rv-balayage__section-head,.rv-balayage__process { grid-template-columns:minmax(0,1fr); gap:1.5rem; }
+ .rv-balayage__benefit-grid { gap:1.5rem; }
+ .rv-balayage__gallery { gap:1rem; }
+ .rv-balayage__images { gap:1rem; }
+}
+@media(max-width:600px) {
+ .rv-balayage__intro,.rv-balayage__benefit-grid,.rv-balayage__gallery { grid-template-columns:minmax(0,1fr); }
+ .rv-balayage__intro--ohne-bild { grid-template-columns:minmax(0,1fr); }
+ .rv-balayage__hero { max-width:100%; aspect-ratio:4/5; }
+ .rv-balayage__work--paar { grid-column:auto; }
+ .rv-balayage__gallery { gap:2rem; }
+ .rv-balayage__work:not(.rv-balayage__work--paar) .rv-photo { aspect-ratio:4/3; }
+ .rv-balayage__steps li { grid-template-columns:2.25rem minmax(0,1fr); gap:0.75rem; }
+}
+.rv-balayage__intro--ohne-bild { grid-template-columns:minmax(0,52rem); }
+
+
+/* ==================================================================
+   FEINSCHLIFF (November)
+
+   Eine Schicht ueber dem bisherigen Design - Palette, Inhalte und
+   Adressen bleiben unveraendert. Was sich aendert:
+
+     - Ueberschriften in Georgia statt fetter Helvetica: ruhiger,
+       redaktioneller, passt zum Fliesstext
+     - ein kurzer Messingstrich als wiederkehrendes Zeichen
+       (Beschriftungen, Spaltentitel, Seitentitel)
+     - mehr Luft zwischen den Abschnitten
+     - Kontaktspalten als Karten wie die Preise
+     - Fusszeile als dunkles Band in Espresso
+     - Abschnitte blenden beim Scrollen weich ein (main.js)
+     - mehrere Abstaende, die wegen der Reset-Falle (Abschnitt 6 der
+       Uebergabe) seit jeher 0px waren, greifen jetzt
+
+   Steht bewusst am Ende der Datei: Wer den Feinschliff nicht mag,
+   loescht diesen Block und hat den Stand davor.
+   ================================================================== */
+
+/* --- Ueberschriften ------------------------------------------------ */
+
+.rv .rv-h2,
+.rv .rv-special__titel,
+.rv .rv-detail__name,
+.rv .rv-detail__mehr-titel {
+    font-family: var(--rv-serif);
+    font-weight: 400;
+    letter-spacing: -0.012em;
+}
+
+.rv .rv-h2 {
+    font-size: clamp(1.9rem, 1.15rem + 2.8vw, 3.6rem);
+    line-height: 1.08;
+}
+
+.rv .rv-prose h2,
+.rv .rv-prose h3 {
+    font-family: var(--rv-serif);
+    font-weight: 400;
+    letter-spacing: -0.005em;
+}
+
+/* --- Der Messingstrich --------------------------------------------- */
+
+/*
+ * Rein schmueckend, traegt keine Information - deshalb gilt keine
+ * Kontrastanforderung (wie beim Strich ueber den Specials-Titeln).
+ */
+.rv-head__label::before,
+.rv-eyebrow::before {
+    background: var(--rv-akzent);
+    content: "";
+    display: inline-block;
+    height: 2px;
+    margin-right: 0.85rem;
+    transform: translateY(-0.28em);
+    vertical-align: baseline;
+    width: 1.75rem;
+}
+
+.rv-group__title { position: relative; }
+
+.rv-group__title::after {
+    background: var(--rv-akzent);
+    bottom: -1px;
+    content: "";
+    height: 2px;
+    left: 0;
+    position: absolute;
+    width: 2.25rem;
+}
+
+/* Reset-Falle: h3 steht im Reset, der Abstand unter dem Spaltentitel
+   war deshalb 0px. */
+.rv .rv-group__title { margin-bottom: 0.5rem; }
+.rv .rv-group__title--wide { margin-bottom: 2rem; }
+
+/* --- Luft ---------------------------------------------------------- */
+
+.rv-section { padding-bottom: clamp(3.5rem, 8vw, 7.5rem); padding-top: clamp(3.5rem, 8vw, 7.5rem); }
+
+/* Reset-Falle: p steht im Reset. Der Hinweis unter einer Ueberschrift
+   klebte dadurch direkt auf dem, was folgt. */
+.rv .rv-note {
+    margin-bottom: clamp(2rem, 4vw, 3rem);
+    margin-top: -0.75rem;
+}
+
+/* Reset-Falle: Absaetze im Editortext hatten keinen Abstand zueinander. */
+.rv .rv-prose > * + * { margin-top: 1.15rem; }
+.rv .rv-prose > h2 { margin-top: 2.5rem; }
+.rv .rv-prose > h3 { margin-top: 1.75rem; }
+.rv .rv-prose > :first-child { margin-top: 0; }
+
+/* --- Kopfzeile ----------------------------------------------------- */
+
+/* Der Unterstrich waechst beim Zeigen von links herein. */
+.rv-nav a {
+    background: linear-gradient(currentColor, currentColor) left bottom / 0 1px no-repeat;
+    border-bottom: 0;
+    transition: background-size 0.25s ease;
+}
+
+.rv-nav a:hover,
+.rv-nav a:focus-visible { background-size: 100% 1px; }
+
+/* --- Hero ---------------------------------------------------------- */
+
+/* Ein Hauch Heather Beige oben rechts - nimmt der grossen Flaeche die
+   Leere, ohne eine neue Farbe einzufuehren. */
+.rv-hero {
+    background: radial-gradient(110% 85% at 88% 0%, rgba(183, 169, 149, 0.3), rgba(231, 225, 214, 0) 62%);
+    padding-bottom: clamp(2.5rem, 6vw, 5rem);
+}
+
+.rv-hero__rule {
+    background: var(--rv-rule);
+    position: relative;
+}
+
+.rv-hero__rule::before {
+    background: var(--rv-akzent);
+    content: "";
+    height: 3px;
+    left: 0;
+    position: absolute;
+    top: -1px;
+    width: clamp(3rem, 8vw, 6rem);
+}
+
+.rv-lead {
+    font-size: clamp(1.15rem, 1rem + 0.75vw, 1.6rem);
+    line-height: 1.5;
+    max-width: 34ch;
+}
+
+/* --- Schaltflaechen ------------------------------------------------ */
+
+.rv .rv-btn {
+    transition: background 0.2s, color 0.2s, box-shadow 0.25s, transform 0.25s;
+}
+
+.rv .rv-btn:hover {
+    box-shadow: var(--rv-schatten-klein);
+    transform: translateY(-2px);
+}
+
+/* --- Bilder -------------------------------------------------------- */
+
+/* Das grosse Bild im zweispaltigen Block steht auf einer versetzten
+   Flaeche in Heather Beige - gibt Tiefe ohne Schatten. */
+.rv-split > .rv-photo {
+    box-shadow: 1.1rem 1.1rem 0 0 rgba(183, 169, 149, 0.5);
+    margin-bottom: 1.1rem;
+    margin-right: 1.1rem;
+}
+
+.rv-team .rv-photo img,
+.rv-special-karte .rv-photo img {
+    transition: transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.rv-team > *:hover .rv-photo img,
+.rv-special-karte:hover .rv-photo img { transform: scale(1.04); }
+
+/* --- Specials auf der Startseite ----------------------------------- */
+
+/* Der Link stand als Flex-Kind ueber die volle Kartenbreite, der
+   Unterstrich lief bis zum Rand. Jetzt so breit wie sein Text und
+   immer unten an der Karte - alle drei auf einer Hoehe. */
+.rv .rv-special-karte__link {
+    align-self: flex-start;
+    margin-top: auto;
+}
+
+.rv .rv-special-karte__text { margin-bottom: var(--rv-s-4); }
+
+/* "Alle ansehen" als Umriss-Pille statt als Textlink */
+.rv .rv-specials__alle a {
+    border: 1px solid var(--rv-ink);
+    border-radius: var(--rv-r-pill);
+    padding: 0.95rem 1.6rem;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.rv .rv-specials__alle a:hover {
+    background: var(--rv-ink);
+    color: var(--rv-paper);
+}
+
+.rv .rv-section--dunkel .rv-specials__alle a { border-color: var(--rv-akzent); }
+
+/* Espresso auf Messing: 5.09:1 */
+.rv .rv-section--dunkel .rv-specials__alle a:hover {
+    background: var(--rv-akzent);
+    color: #4B2E20;
+}
+
+/* --- Preise -------------------------------------------------------- */
+
+.rv-preiskarte {
+    box-shadow: var(--rv-schatten-klein);
+    padding: 1.75rem 1.75rem 1.25rem;
+    transition: box-shadow 0.25s, transform 0.25s;
+}
+
+.rv-preiskarte:hover {
+    box-shadow: var(--rv-schatten);
+    transform: translateY(-3px);
+}
+
+/* --- Preiskarten fuellen die Zeile --------------------------------- */
+
+/*
+ * Vorher ein Raster mit fester Hoechstbreite je Karte, linksbuendig:
+ * Auf breiten Bildschirmen blieb rechts ein Drittel der Seite leer, und
+ * eine vierte Gruppe stand allein in der zweiten Reihe.
+ *
+ * Jetzt teilen sich die Karten jede Reihe vollstaendig auf - die
+ * Kanten stehen buendig mit Ueberschrift und Seitenrand:
+ *
+ *   1 Gruppe    eine Karte, begrenzt auf 34rem (sonst endlose Punktlinie)
+ *   2 Gruppen   zwei nebeneinander
+ *   3 Gruppen   drei nebeneinander
+ *   4 Gruppen   zwei mal zwei, statt drei plus eine
+ *   5, 6 ...    drei je Reihe, eine Restreihe teilt sich die Breite
+ *
+ * Der Kunde muss dafuer nichts einstellen: Die Zahl der Gruppen in der
+ * Preisliste entscheidet.
+ */
+.rv-prices,
+.rv-prices--seite {
+    display: flex;
+    flex-wrap: wrap;
+    gap: clamp(1.25rem, 2.5vw, 2rem);
+}
+
+.rv-prices > * {
+    flex: 1 1 min(21rem, 100%);
+}
+
+.rv-prices > :only-child {
+    flex-grow: 0;
+    flex-basis: min(34rem, 100%);
+}
+
+@media (min-width: 821px) {
+    /* genau vier Karten: 34% Grundbreite laesst nur zwei in eine Reihe */
+    .rv-prices > :first-child:nth-last-child(4),
+    .rv-prices > :first-child:nth-last-child(4) ~ * {
+        flex-basis: 34%;
+    }
+}
+
+/* Etwas mehr Ruhe in der Karte, wenn sie breit wird */
+.rv-preiskarte .rv-item { padding-bottom: 0.65rem; padding-top: 0.65rem; }
+
+/* --- Fragen und Antworten ------------------------------------------ */
+
+/* Plus rechts statt Dreieck links; dreht sich beim Oeffnen zum Kreuz. */
+.rv-faq__item { padding: 0; }
+
+.rv-faq__item summary {
+    align-items: center;
+    display: flex;
+    gap: 1.5rem;
+    justify-content: space-between;
+    list-style: none;
+    min-height: 2.75rem;
+    padding: 1.15rem 0;
+    transition: color 0.2s;
+}
+
+.rv-faq__item summary::-webkit-details-marker { display: none; }
+
+.rv-faq__item summary::after {
+    color: var(--rv-muted);
+    content: "+";
+    flex: none;
+    font-family: var(--rv-sans);
+    font-size: 1.6rem;
+    font-weight: 400;
+    line-height: 1;
+    transition: transform 0.25s ease;
+}
+
+.rv-faq__item[open] summary::after { transform: rotate(45deg); }
+
+.rv .rv-faq__item p {
+    margin-top: 0;
+    max-width: 60ch;
+    padding-bottom: 1.4rem;
+}
+
+/* Die Ueberschrift bleibt neben den Fragen stehen, solange man liest. */
+.rv .rv-faq > .rv-h2 {
+    align-self: start;
+    margin-bottom: 0;
+    margin-top: 0;
+    position: sticky;
+    top: 6rem;
+}
+
+/* --- Oeffnungszeiten und Kontakt ----------------------------------- */
+
+/* Die drei Spalten als Karten - dieselbe Sprache wie die Preise. */
+.rv-visit { gap: clamp(1.25rem, 2.5vw, 2rem); }
+
+.rv-visit > div {
+    background: var(--rv-paper);
+    border: 1px solid rgba(183, 169, 149, 0.5);
+    border-radius: var(--rv-r-m);
+    box-shadow: var(--rv-schatten-klein);
+    padding: 1.75rem 1.75rem 2rem;
+}
+
+.rv-visit .rv-group__title + .rv-visit__block { margin-top: 1rem; }
+
+/* Reset-Falle: der Knopf klebte an der Zeile darueber. */
+.rv .rv-visit__action { margin-top: 1.75rem; }
+
+/* --- Fusszeile ----------------------------------------------------- */
+
+/*
+ * Dunkles Band als Abschluss, wie die Specials. Nachgerechnet:
+ * Heather Beige auf Espresso 5.33:1, Sand Cream 9.43:1.
+ */
+.rv-foot {
+    --rv-ink: #E7E1D6;
+    --rv-muted: #B7A995;
+    --rv-rule: rgba(231, 225, 214, 0.2);
+    align-items: center;
+    background: #4B2E20;
+    border-top: 3px solid var(--rv-akzent);
+    padding-bottom: clamp(2rem, 4vw, 3rem);
+    padding-top: clamp(2rem, 4vw, 3rem);
+}
+
+.rv-foot a { transition: color 0.2s; }
+
+/* --- Textseiten: Impressum, Datenschutz ---------------------------- */
+
+.rv-wrap--text { max-width: 70ch; }
+
+.rv .rv-artikel .rv-h2 {
+    border-bottom: 1px solid var(--rv-rule);
+    margin-bottom: clamp(1.75rem, 3vw, 2.5rem);
+    margin-top: 0;
+    padding-bottom: clamp(1.25rem, 2.5vw, 1.75rem);
+    position: relative;
+}
+
+.rv .rv-artikel .rv-h2::after {
+    background: var(--rv-akzent);
+    bottom: -2px;
+    content: "";
+    height: 3px;
+    left: 0;
+    position: absolute;
+    width: 4rem;
+}
+
+.rv .rv-artikel .rv-prose > h2 {
+    font-size: clamp(1.3rem, 1.1rem + 0.8vw, 1.6rem);
+    line-height: 1.25;
+    margin-bottom: 0;
+    margin-top: 2.75rem;
+}
+
+.rv .rv-artikel .rv-prose > h2 + * { margin-top: 0.75rem; }
+
+/* Ein Hinweis im Editortext (Absatz mit der Klasse rv-note) wird zum
+   abgesetzten Kasten. Espresso auf vertieftem Sand Cream: 9:1. */
+.rv .rv-prose > .rv-note {
+    background: var(--rv-paper-2);
+    border-left: 3px solid var(--rv-akzent);
+    border-radius: 0 var(--rv-r-s) var(--rv-r-s) 0;
+    color: var(--rv-ink);
+    font-size: var(--rv-t-lesen);
+    margin-bottom: 0;
+    margin-top: 0;
+    max-width: none;
+    padding: 1rem 1.25rem;
+}
+
+/* --- Parfum: Detailansicht im Fenster ------------------------------ */
+
+/*
+ * Ein Klick auf eine Parfum-Karte oeffnet ein Fenster mit grossem Bild
+ * und allen Angaben (main.js, letzter Block). Es ersetzt die frueheren
+ * Einzelseiten, die in Publii je Duft von Hand angelegt werden mussten.
+ *
+ * Die Klasse rv-parfum--klickbar setzt main.js - nur, wenn der Browser
+ * das Fenster kann.
+ *
+ * Einen sichtbaren Knopf "Details ansehen" gibt es auf Wunsch des
+ * Kunden nicht mehr. Stattdessen macht main.js den Namen zu einem
+ * Knopf, der aussieht wie der Name (.rv-parfum__oeffnen): Mit der Maus
+ * aendert sich nichts, mit der Tastatur und dem Screenreader bleibt die
+ * Ansicht erreichbar. Die aelteren Regeln fuer .rv-parfum__details
+ * weiter oben sind damit ohne Wirkung.
+ */
+.rv-parfum--klickbar { cursor: pointer; }
+
+.rv-parfum__oeffnen {
+    background: none;
+    border: 0;
+    color: inherit;
+    cursor: pointer;
+    font: inherit;
+    letter-spacing: inherit;
+    margin: 0;
+    max-width: 100%;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    padding: 0;
+    text-align: left;
+    white-space: normal;
+    word-break: break-word;
+}
+
+/*
+ * Das Fenster. "display" nur im offenen Zustand setzen - sonst waere es
+ * immer zu sehen. Der Inhalt scrollt innen, der Schliessen-Knopf bleibt
+ * dabei stehen.
+ */
+.rv-duft {
+    background: var(--rv-paper);
+    border: 0;
+    border-radius: var(--rv-r-m);
+    box-shadow: 0 24px 64px rgba(75, 46, 32, 0.3);
+    color: var(--rv-ink);
+    max-height: calc(100% - 2.5rem);
+    max-width: none;
+    overflow: hidden;
+    padding: 0;
+    width: min(62rem, calc(100% - 2.5rem));
+}
+
+.rv-duft[open] {
+    animation: rv-duft-ein 0.3s cubic-bezier(0.2, 0.7, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+}
+
+/* Der Fokus liegt nach dem Oeffnen auf dem Fenster selbst, nicht auf
+   dem Schliessen-Knopf - dort stuende sonst sofort ein Fokusring. */
+.rv-duft:focus,
+.rv-duft:focus-visible { outline: none; }
+
+/* Der Grund hinter dem Fenster: Espresso, durchscheinend. Als fester
+   Farbwert, weil ::backdrop die Variablen nicht ueberall erbt. */
+.rv-duft::backdrop {
+    background: rgba(75, 46, 32, 0.55);
+}
+
+.rv-duft[open]::backdrop {
+    animation: rv-duft-grund 0.3s ease;
+}
+
+@keyframes rv-duft-ein {
+    from { opacity: 0; transform: translateY(1rem); }
+    to   { opacity: 1; transform: none; }
+}
+
+@keyframes rv-duft-grund {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+.rv-duft__inhalt {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: clamp(1.5rem, 3.5vw, 2.75rem);
+}
+
+.rv-duft__zu {
+    align-items: center;
+    background: var(--rv-paper);
+    border: 1px solid var(--rv-rule);
+    border-radius: 50%;
+    color: var(--rv-ink);
+    cursor: pointer;
+    display: flex;
+    font-family: var(--rv-sans);
+    font-size: 1.6rem;
+    height: 2.75rem;
+    justify-content: center;
+    line-height: 1;
+    padding: 0 0 0.1em;
+    position: absolute;
+    right: 0.9rem;
+    top: 0.9rem;
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
+    width: 2.75rem;
+    z-index: 2;
+}
+
+.rv-duft__zu:hover {
+    background: var(--rv-ink);
+    border-color: var(--rv-ink);
+    color: var(--rv-paper);
+}
+
+.rv-duft .rv-detail {
+    gap: clamp(1.5rem, 3vw, 2.75rem);
+    grid-template-columns: 5fr 6fr;
+}
+
+/* Platz fuer den Schliessen-Knopf rechts oben */
+.rv-duft .rv-detail__inhalt > .rv-eyebrow,
+.rv-duft .rv-detail__inhalt > .rv-detail__name { padding-right: 2.75rem; }
+
+.rv .rv-duft .rv-detail__name { font-size: clamp(1.6rem, 1.1rem + 1.6vw, 2.4rem); }
+
+.rv .rv-duft .rv-familien { margin-top: var(--rv-s-3); }
+
+@media (max-width: 820px) {
+    .rv-duft .rv-detail { grid-template-columns: 1fr; }
+
+    /* einspaltig: Parfum-Bilder sind quadratisch und werden nie
+       beschnitten - ueber die volle Breite fuellte das Bild den
+       Bildschirm. Deshalb begrenzt und mittig. */
+    .rv-duft .rv-detail__bild {
+        margin: 0 auto;
+        max-width: 22rem;
+        width: 100%;
+    }
+}
+
+/* Handy: das Fenster fuellt den Bildschirm, das Bild reicht bis an den Rand */
+@media (max-width: 560px) {
+    .rv-duft {
+        border-radius: 0;
+        height: 100%;
+        max-height: 100%;
+        max-width: 100%;
+        width: 100%;
+    }
+
+    .rv-duft__inhalt { padding: 0 0 2rem; }
+
+    .rv-duft .rv-detail { gap: 1.25rem; }
+    .rv-duft .rv-detail__bild { border-radius: 0; max-width: none; }
+    .rv-duft .rv-detail__inhalt { padding: 0 var(--rv-gutter); }
+
+    .rv-duft .rv-detail__inhalt > .rv-eyebrow,
+    .rv-duft .rv-detail__inhalt > .rv-detail__name { padding-right: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rv-duft[open]::backdrop { animation: none; }
+}
+
+/* --- Einblenden beim Scrollen -------------------------------------- */
+
+/*
+ * Die Klassen setzt main.js - und nur an Elementen, die beim Laden noch
+ * unter dem Bildschirmrand liegen. Ohne JavaScript, in Publiis Vorschau
+ * und bei "Bewegung reduzieren" passiert nichts, alles ist einfach da.
+ * Nach dem Einblenden nimmt main.js die Klassen wieder weg, damit die
+ * eigenen Uebergaenge der Karten (Anheben beim Zeigen) unberuehrt
+ * bleiben.
+ */
+.rv-reveal {
+    opacity: 0;
+    transform: translateY(1.25rem);
+    transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1);
+    transition-delay: var(--rv-verzug, 0s);
+}
+
+.rv-reveal.rv-reveal--da {
+    opacity: 1;
+    transform: none;
+}
+
+@media print {
+    .rv-reveal { opacity: 1; transform: none; }
+}
+
+/* --- Feinschliff auf schmalen Bildschirmen ------------------------- */
+
+@media (max-width: 820px) {
+    .rv .rv-faq > .rv-h2 { margin-bottom: 1rem; position: static; }
+
+    .rv-split > .rv-photo {
+        box-shadow: 0.7rem 0.7rem 0 0 rgba(183, 169, 149, 0.5);
+        margin-bottom: 0.7rem;
+        margin-right: 0.7rem;
+    }
+}
+
+@media (max-width: 560px) {
+    .rv-visit > div,
+    .rv-preiskarte { padding: 1.35rem 1.25rem 1.25rem; }
+
+    .rv-foot { align-items: flex-start; flex-direction: column; }
+
+    /* Marke und Menueknopf in einer Zeile: Bei einem laengeren Namen
+       rutschte der Knopf in eine zweite, die Kopfzeile war 118px hoch. */
+    .rv-top { padding-bottom: 0.75rem; padding-top: 0.75rem; }
+    .rv-top__mark { flex: 1 1 0; font-size: 0.85rem; letter-spacing: 0.12em; }
+
+    /* Tippflaechen: beide lagen knapp unter 44px (42 und 32). */
+    .rv-visit__link::after { inset: -0.9rem -0.25rem; }
+    .rv-balayage__jump { min-height: 2.75rem; }
+}
+
+/* ------------------------------------------------------------------
+   SUCHFELD DER PARFUM-SEITE
+
+   Steht rechts neben der Segmentwahl und ist genauso hoch (54px).
+   Dieselbe Sprache wie die Chips: Pille, heller Grund, feiner Rand.
+
+   Die Schrift ist 16px gross - darunter zoomt Safari auf dem iPhone
+   beim Antippen ins Feld hinein. Der eigene Knopf zum Leeren ersetzt
+   das Kreuz, das nur manche Browser von sich aus zeigen.
+   ------------------------------------------------------------------ */
+
+.rv-suche {
+    flex: 1 1 15rem;
+    max-width: 22rem;
+    min-width: 0;
+    position: relative;
+}
+
+.rv-suche__feld {
+    -webkit-appearance: none;
+    appearance: none;
+    background: var(--rv-paper);
+    border: 1px solid rgba(183, 169, 149, 0.6);
+    border-radius: var(--rv-r-pill);
+    color: var(--rv-ink);
+    display: block;
+    font-family: var(--rv-sans);
+    font-size: 1rem;
+    height: calc(3.25rem + 2px);
+    letter-spacing: 0.01em;
+    margin: 0;
+    padding: 0 3rem 0 2.9rem;
+    text-overflow: ellipsis;
+    transition: border-color 0.18s, box-shadow 0.18s;
+    width: 100%;
+}
+
+.rv-suche__feld::placeholder {
+    color: var(--rv-muted);
+    opacity: 1;
+}
+
+.rv-suche__feld::-webkit-search-cancel-button,
+.rv-suche__feld::-webkit-search-decoration {
+    -webkit-appearance: none;
+    display: none;
+}
+
+.rv-suche__feld:hover {
+    border-color: var(--rv-ink);
+}
+
+.rv-suche__feld:focus {
+    border-color: var(--rv-ink);
+    box-shadow: 0 0 0 3px rgba(197, 162, 93, 0.4);
+    outline: none;
+}
+
+.rv-suche__lupe {
+    color: var(--rv-muted);
+    left: 1.15rem;
+    pointer-events: none;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.rv-suche__leeren {
+    background: none;
+    border: 0;
+    border-radius: 50%;
+    color: var(--rv-muted);
+    cursor: pointer;
+    font-family: var(--rv-sans);
+    font-size: 1.4rem;
+    height: 2.75rem;
+    line-height: 1;
+    padding: 0;
+    position: absolute;
+    right: 0.3rem;
+    top: 50%;
+    transform: translateY(-50%);
+    transition: color 0.18s;
+    width: 2.75rem;
+}
+
+.rv-suche__leeren:hover {
+    color: var(--rv-ink);
+}
+
+.rv-suche__leeren[hidden] {
+    display: none;
+}
+
+@media (max-width: 560px) {
+    /* Unter der Segmentwahl, ueber die volle Breite. */
+    .rv-suche {
+        flex-basis: 100%;
+        max-width: none;
+    }
+}
+
+/* ==================================================================
+   COMING SOON
+
+   Solange in den Theme-Einstellungen "Coming Soon" eingeschaltet ist,
+   steht im Internet auf jeder Adresse nur diese Seite. Sie ist gebaut
+   wie der Kopf der Startseite - kleine Zeile, grosser Name, Linie -
+   und nimmt nur Farben der Palette.
+
+   .rv--baustelle haengt am aeussersten Element und sorgt dafuer, dass
+   die Seite das Fenster fuellt: Inhalt mittig, Fusszeile unten. Mit
+   "vh" und nicht "svh": Die neueren Einheiten kennt Publiis CleanCSS
+   5.3.3 nicht sicher.
+   ================================================================== */
+
+.rv--baustelle {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.rv-baustelle {
+    background: radial-gradient(110% 85% at 88% 0%, rgba(183, 169, 149, 0.3), rgba(231, 225, 214, 0) 62%);
+    display: flex;
+    flex: 1 0 auto;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.rv-baustelle__innen {
+    padding: clamp(2rem, 5vw, 4.5rem) var(--rv-gutter);
+}
+
+/* Die kleine Zeile ist frei beschriftbar - ein sehr langes Wort darf
+   umbrechen, statt ueber den Rand zu laufen. */
+.rv-baustelle .rv-eyebrow {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.rv-baustelle__text {
+    max-width: 44rem;
+    min-width: 0;
+}
+
+/* Mit ".rv " davor: Ueberschrift und Absatz stehen im Reset. */
+.rv .rv-baustelle__titel {
+    margin-bottom: var(--rv-s-4);
+    margin-top: 0;
+}
+
+.rv .rv-baustelle__satz {
+    max-width: 48ch;
+}
+
+/*
+ * Hinweis in Publiis Vorschau. Wird nie veroeffentlicht, siehe
+ * partials/coming-soon-hinweis.hbs. Espresso mit Sand Cream darauf
+ * traegt 9.43:1, der Knopf in Brushed Brass mit Espresso 5.09:1.
+ */
+.rv-cs-hinweis,
+.rv-cs-probe__leiste {
+    align-items: center;
+    background: #4B2E20;
+    color: #E7E1D6;
+    display: flex;
+    flex-wrap: wrap;
+    font-family: var(--rv-sans);
+    font-size: var(--rv-t-mittel);
+    gap: 0.75rem 1.5rem;
+    justify-content: space-between;
+    line-height: 1.45;
+    padding: 0.75rem var(--rv-gutter);
+}
+
+.rv-cs-hinweis__text {
+    flex: 1 1 22rem;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+/* Mit ".rv " davor: Der Knopf ist ein <a>, ".rv a" naehme ihm die Farbe. */
+.rv .rv-cs-hinweis__knopf {
+    align-items: center;
+    background: #C5A25D;
+    border-radius: var(--rv-r-pill);
+    color: #4B2E20;
+    display: inline-flex;
+    flex: none;
+    font-family: var(--rv-sans);
+    font-size: var(--rv-t-klein);
+    font-weight: 700;
+    min-height: 2.75rem;
+    padding: 0 1.25rem;
+    text-decoration: none;
+}
+
+/*
+ * Probeansicht der Coming-Soon-Seite in der Vorschau. Liegt ueber der
+ * ganzen Seite und wird ueber die Sprungmarke sichtbar. Unsichtbar per
+ * "visibility": Der Kasten hat dann schon seine Breite, und der
+ * Schriftzug darin wird richtig eingepasst.
+ */
+.rv-cs-probe {
+    background: var(--rv-paper);
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    left: 0;
+    overflow: auto;
+    position: fixed;
+    right: 0;
+    top: 0;
+    visibility: hidden;
+    z-index: 60;
+}
+
+.rv-cs-probe:target {
+    visibility: visible;
+}
+
+.rv-cs-probe__leiste {
+    flex: none;
+}

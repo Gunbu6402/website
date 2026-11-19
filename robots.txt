@@ -1,0 +1,3 @@
+User-agent: *
+Disallow:
+Sitemap: https://Gunbu6402/website/sitemap.xml
