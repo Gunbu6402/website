@@ -1,35 +1,35 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<?xml-stylesheet type="text/xsl" href="https://Gunbu6402.github.io/website/sitemap.xsl"?>
+<?xml-stylesheet type="text/xsl" href="https://raveva.de/sitemap.xsl"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
 <url>
-<loc>https://Gunbu6402.github.io/website/</loc>
+<loc>https://raveva.de/</loc>
 </url>
 <url>
-<loc>https://Gunbu6402.github.io/website/balayage/</loc>
+<loc>https://raveva.de/balayage/</loc>
 <lastmod>2026-10-09T09:19:52+02:00</lastmod>
 </url>
 <url>
-<loc>https://Gunbu6402.github.io/website/datenschutz/</loc>
+<loc>https://raveva.de/datenschutz/</loc>
 <lastmod>2026-11-02T13:31:37+01:00</lastmod>
 </url>
 <url>
-<loc>https://Gunbu6402.github.io/website/impressum/</loc>
+<loc>https://raveva.de/impressum/</loc>
 <lastmod>2026-11-02T13:31:37+01:00</lastmod>
 </url>
 <url>
-<loc>https://Gunbu6402.github.io/website/kontakt/</loc>
+<loc>https://raveva.de/kontakt/</loc>
 <lastmod>2026-11-02T13:31:37+01:00</lastmod>
 </url>
 <url>
-<loc>https://Gunbu6402.github.io/website/leistungen/</loc>
+<loc>https://raveva.de/leistungen/</loc>
 <lastmod>2026-11-02T13:31:37+01:00</lastmod>
 </url>
 <url>
-<loc>https://Gunbu6402.github.io/website/parfums/</loc>
+<loc>https://raveva.de/parfums/</loc>
 <lastmod>2026-11-02T13:31:37+01:00</lastmod>
 </url>
 <url>
-<loc>https://Gunbu6402.github.io/website/preise/</loc>
+<loc>https://raveva.de/preise/</loc>
 <lastmod>2026-11-02T13:31:37+01:00</lastmod>
 </url>
 </urlset>
